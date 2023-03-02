@@ -69,9 +69,9 @@ fn more_complex_tree() {
         let e = &embedding.iter().find(|e| e.text == "0").unwrap();
         assert_eq!(0, e.ord);
         assert_eq!(0, e.y_order);
-        // assert_eq!(3, e.x_center);
+        assert_eq!(3, e.x_center);
         assert_eq!(2, e.x_extent);
-        // assert_eq!(6, e.x_extent_children);
+        assert_eq!(6, e.x_extent_children);
     }
     {
         let e = &embedding.iter().find(|e| e.text == "1").unwrap();
@@ -79,13 +79,13 @@ fn more_complex_tree() {
         assert_eq!(1, e.y_order);
         assert_eq!(2, e.x_center);
         assert_eq!(2, e.x_extent);
-        // assert_eq!(4, e.x_extent_children);
+        assert_eq!(4, e.x_extent_children);
     }
     {
         let e = &embedding.iter().find(|e| e.text == "2").unwrap();
         assert_eq!(4, e.ord);
         assert_eq!(1, e.y_order);
-        // assert_eq!(5, e.x_center);
+        assert_eq!(5, e.x_center);
         assert_eq!(2, e.x_extent);
         assert_eq!(2, e.x_extent_children);
     }
@@ -93,7 +93,7 @@ fn more_complex_tree() {
         let e = &embedding.iter().find(|e| e.text == "3").unwrap();
         assert_eq!(2, e.ord);
         assert_eq!(2, e.y_order);
-        // assert_eq!(1, e.x_center);
+        assert_eq!(1, e.x_center);
         assert_eq!(2, e.x_extent);
         assert_eq!(2, e.x_extent_children);
     }
@@ -101,7 +101,7 @@ fn more_complex_tree() {
         let e = &embedding.iter().find(|e| e.text == "4").unwrap();
         assert_eq!(3, e.ord);
         assert_eq!(2, e.y_order);
-        // assert_eq!(3, e.x_center);
+        assert_eq!(3, e.x_center);
         assert_eq!(2, e.x_extent);
         assert_eq!(2, e.x_extent_children);
     }

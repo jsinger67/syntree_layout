@@ -1,6 +1,6 @@
 //! The module that holds types to embed nodes of a tree into the plane.
 
-use syntree::{index::Index, pointer::Width, Node, Tree};
+use syntree::{index::Index, node::Event, pointer::Width, Node, Tree};
 
 use crate::{
     internal::node::{EmbeddingHelperData, InternalNode},
@@ -56,7 +56,7 @@ where
 
         // Finally set the property 'x_center' from leafs to root
         // After this step each item has all necessary properties set
-        Self::apply_x_center(&mut items);
+        Self::apply_x_center(&mut items)?;
 
         // Transfer result
         Ok(Self::transfer_result(items))
@@ -72,8 +72,8 @@ where
         let y_order = depth;
         let x_center = 0;
         let x_extent = text.len() + 1;
-        let x_extent_of_children = 0;
-        let x_extent_children = 0;
+        let x_extent_of_children = x_extent;
+        let x_extent_children = x_extent;
         let is_emphasized = node.value().emphasize();
         let parent = node
             .parent()
@@ -114,23 +114,25 @@ where
     }
 
     fn apply_children_x_extents(tree: &Tree<T, I, W>, items: &mut EmbeddingHelperData<W>) {
-        tree.walk().enumerate().for_each(|(ord, node)| {
-            let x_extent_of_children = node.children().fold(0, |acc, child| {
-                if let Some(internal_child) = items.get_by_node_id(&child.id()) {
-                    acc + internal_child.x_extent_children
-                } else {
-                    acc
+        tree.walk_events().for_each(|(event, node)| {
+            if let Event::Up = event {
+                let x_extent_of_children = node.children().fold(0, |acc, child| {
+                    if let Some(internal_child) = items.get_by_node_id(&child.id()) {
+                        acc + internal_child.x_extent_children
+                    } else {
+                        acc
+                    }
+                });
+                if let Some(internal_node) = items.get_mut_by_node_id(&node.id()) {
+                    internal_node.x_extent_of_children = x_extent_of_children;
+                    internal_node.x_extent_children =
+                        std::cmp::max(internal_node.x_extent, x_extent_of_children);
                 }
-            });
-            if let Some(internal_node) = items.get_mut_by_ord(ord) {
-                internal_node.x_extent_of_children = x_extent_of_children;
-                internal_node.x_extent_children =
-                    std::cmp::max(internal_node.x_extent, x_extent_of_children);
             }
         });
     }
 
-    fn x_center_layer(layer: usize, items: &mut EmbeddingHelperData<W>) {
+    fn x_center_layer(layer: usize, items: &mut EmbeddingHelperData<W>) -> Result<()> {
         let node_ids_in_layer =
             items
                 .0
@@ -166,10 +168,10 @@ where
                         // We start half way left from the parents x center
                         placed_parent_item.x_center - placed_parent_item.x_extent_of_children / 2
                     } else {
-                        // This really should not happen, because the parent_node_id was
-                        // previously retrieved from the tree itself. And the tree is not
-                        // touched at all.
-                        panic!("Some item expected here!")
+                        // This really should not happen
+                        return Err(LayouterError::from_description(
+                            "Some item expected here!".to_string(),
+                        ));
                     }
                 } else {
                     // `None` means we are in layer 0
@@ -187,9 +189,11 @@ where
                 }
             }
         }
+
+        Ok(())
     }
 
-    fn apply_x_center(items: &mut EmbeddingHelperData<W>) {
+    fn apply_x_center(items: &mut EmbeddingHelperData<W>) -> Result<()> {
         let height = items
             .0
             .iter()
@@ -197,8 +201,9 @@ where
             .map(|i| i.y_order)
             .unwrap_or_default();
         for l in 0..height + 1 {
-            Self::x_center_layer(l, items);
+            Self::x_center_layer(l, items)?;
         }
+        Ok(())
     }
 
     /// Transforming the internal `EmbeddingHelperMap` to the external representation `Embedding`.
