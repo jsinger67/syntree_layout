@@ -169,7 +169,7 @@ where
     W: Width,
 {
     pub fn embed_with_visualize(self) -> Result<Self> {
-        let embedding = VisualizeEmbedder::embed(&self.tree)?;
+        let embedding = VisualizeEmbedder::embed(self.tree)?;
         Ok(Self {
             tree: self.tree,
             file_name: self.file_name,

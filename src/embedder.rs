@@ -77,8 +77,7 @@ where
         let is_emphasized = node.value().emphasize();
         let parent = node
             .parent()
-            .map(|p| items.get_by_node_id(&p.id()).map(|n| n.ord))
-            .flatten();
+            .and_then(|p| items.get_by_node_id(&p.id()).map(|n| n.ord));
         let node_id = node.id();
 
         InternalNode {
@@ -116,7 +115,7 @@ where
 
     fn apply_children_x_extents(tree: &Tree<T, I, W>, items: &mut EmbeddingHelperData<W>) {
         tree.walk().enumerate().for_each(|(ord, node)| {
-            let x_extent_children = node.children().fold(0, |acc, child| {
+            let x_extent_of_children = node.children().fold(0, |acc, child| {
                 if let Some(internal_child) = items.get_by_node_id(&child.id()) {
                     acc + internal_child.x_extent_children
                 } else {
@@ -124,7 +123,9 @@ where
                 }
             });
             if let Some(internal_node) = items.get_mut_by_ord(ord) {
-                internal_node.x_extent_children = x_extent_children;
+                internal_node.x_extent_of_children = x_extent_of_children;
+                internal_node.x_extent_children =
+                    std::cmp::max(internal_node.x_extent, x_extent_of_children);
             }
         });
     }

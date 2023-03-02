@@ -153,6 +153,6 @@ impl Drawer for SvgDrawer {
             Ok(())
         }
 
-        Ok(build_xml(xml, embedding).map_err(LayouterError::from_io_error)?)
+        build_xml(xml, embedding).map_err(LayouterError::from_io_error)
     }
 }
