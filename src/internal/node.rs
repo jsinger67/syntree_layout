@@ -88,7 +88,10 @@ where
         self.1.get(node_id).and_then(|n| self.0.get(*n))
     }
 
-    pub(crate) fn get_mut_by_node_id(&mut self, node_id: &NodeId<W>) -> Option<&mut InternalNode<W>> {
+    pub(crate) fn get_mut_by_node_id(
+        &mut self,
+        node_id: &NodeId<W>,
+    ) -> Option<&mut InternalNode<W>> {
         self.1.get(node_id).and_then(|n| self.0.get_mut(*n))
     }
 

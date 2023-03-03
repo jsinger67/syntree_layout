@@ -1,5 +1,5 @@
 use syntree::{Builder, Tree};
-use syntree_layout::{Visualize, VisualizeEmbedder};
+use syntree_layout::{Embedder, Visualize};
 
 #[derive(Debug)]
 struct MyNodeData(i32);
@@ -13,7 +13,12 @@ impl Visualize for MyNodeData {
 #[test]
 fn empty_tree() {
     let tree: Tree<MyNodeData, _, _> = Builder::new().build().unwrap();
-    let embedding = VisualizeEmbedder::embed(&tree).unwrap();
+    let embedding = Embedder::embed(
+        &tree,
+        Box::new(|value: &MyNodeData| value.visualize()),
+        Box::new(|value: &MyNodeData| value.emphasize()),
+    )
+    .unwrap();
     assert!(embedding.is_empty());
 }
 
@@ -23,7 +28,12 @@ fn tree_with_single_node() {
     tree.open(MyNodeData(0)).unwrap();
     tree.close().unwrap();
     let tree = tree.build().unwrap();
-    let embedding = VisualizeEmbedder::embed(&tree).unwrap();
+    let embedding = Embedder::embed(
+        &tree,
+        Box::new(|value: &MyNodeData| value.visualize()),
+        Box::new(|value: &MyNodeData| value.emphasize()),
+    )
+    .unwrap();
     assert_eq!(1, embedding.len());
 
     {
@@ -47,10 +57,13 @@ fn more_complex_tree() {
 
     tree.open(MyNodeData(0)).unwrap();
     tree.open(MyNodeData(1)).unwrap();
-    tree.token(MyNodeData(3), 1).unwrap();
-    tree.token(MyNodeData(4), 1).unwrap();
+    tree.open(MyNodeData(3)).unwrap();
     tree.close().unwrap();
-    tree.token(MyNodeData(2), 1).unwrap();
+    tree.open(MyNodeData(4)).unwrap();
+    tree.close().unwrap();
+    tree.close().unwrap();
+    tree.open(MyNodeData(2)).unwrap();
+    tree.close().unwrap();
     tree.close().unwrap();
 
     let tree = tree.build().unwrap();
@@ -60,7 +73,12 @@ fn more_complex_tree() {
     let s = String::from_utf8(s).unwrap();
     println!("{s}");
 
-    let embedding = VisualizeEmbedder::embed(&tree).unwrap();
+    let embedding = Embedder::embed(
+        &tree,
+        Box::new(|value: &MyNodeData| value.visualize()),
+        Box::new(|value: &MyNodeData| value.emphasize()),
+    )
+    .unwrap();
 
     assert!(!embedding.is_empty());
     assert_eq!(5, embedding.len());

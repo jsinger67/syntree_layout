@@ -8,7 +8,7 @@ mod svg_drawer;
 mod visualize;
 
 pub use drawer::Drawer;
-pub use embedder::VisualizeEmbedder;
+pub use embedder::Embedder;
 pub use errors::{LayouterError, Result};
 pub use layouter::Layouter;
 pub use node::{EmbeddedNode, Embedding};

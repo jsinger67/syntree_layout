@@ -4,17 +4,18 @@ use syntree::{index::Index, node::Event, pointer::Width, Node, Tree};
 
 use crate::{
     internal::node::{EmbeddingHelperData, InternalNode},
-    visualize::Visualize,
     Embedding, LayouterError, Result,
 };
+
+type StringifyFunction<T> = Box<dyn Fn(&T) -> String>;
+type EmphasizeFunction<T> = Box<dyn Fn(&T) -> bool>;
 
 ///
 /// The Embedder type provides a single public method `embed` to arrange nodes of a tree into the
 /// plane.
 ///
-pub struct VisualizeEmbedder<T, I, W>
+pub struct Embedder<T, I, W>
 where
-    T: Visualize,
     I: Index,
     W: Width,
 {
@@ -23,9 +24,8 @@ where
     _3: std::marker::PhantomData<W>,
 }
 
-impl<T, I, W> VisualizeEmbedder<T, I, W>
+impl<T, I, W> Embedder<T, I, W>
 where
-    T: Visualize,
     I: Index,
     W: Width,
 {
@@ -41,11 +41,15 @@ where
     ///
     /// The algorithm is of time complexity class O(n).
     ///
-    pub fn embed(tree: &Tree<T, I, W>) -> Result<Embedding> {
+    pub fn embed(
+        tree: &Tree<T, I, W>,
+        stringify: StringifyFunction<T>,
+        emphasize: EmphasizeFunction<T>,
+    ) -> Result<Embedding> {
         // Insert all tree items with their indices
         // After this step each item has following properties set:
         // 'y_order', 'x_extent', 'text', 'is_emphasized', 'ord'
-        let mut items = Self::create_initial_embedding_data(tree)?;
+        let mut items = Self::create_initial_embedding_data(tree, &stringify, &emphasize)?;
         debug_assert_eq!(items.0.len(), items.1.len());
 
         // Set widths (x_extent_children, x_extent_of_children) on each InternalNode structure
@@ -67,14 +71,16 @@ where
         depth: usize,
         node: Node<T, I, W>,
         items: &EmbeddingHelperData<W>,
+        stringify: &StringifyFunction<T>,
+        emphasize: &EmphasizeFunction<T>,
     ) -> InternalNode<W> {
-        let text = node.value().visualize();
+        let text = stringify(node.value());
         let y_order = depth;
         let x_center = 0;
         let x_extent = text.len() + 1;
         let x_extent_of_children = x_extent;
         let x_extent_children = x_extent;
-        let is_emphasized = node.value().emphasize();
+        let is_emphasized = emphasize(node.value());
         let parent = node
             .parent()
             .and_then(|p| items.get_by_node_id(&p.id()).map(|n| n.ord));
@@ -94,7 +100,11 @@ where
         }
     }
 
-    fn create_initial_embedding_data(tree: &Tree<T, I, W>) -> Result<EmbeddingHelperData<W>> {
+    fn create_initial_embedding_data(
+        tree: &Tree<T, I, W>,
+        stringify: &StringifyFunction<T>,
+        emphasize: &EmphasizeFunction<T>,
+    ) -> Result<EmbeddingHelperData<W>> {
         let mut items = EmbeddingHelperData::with_capacity(tree.len());
         if tree.children().count() > 1 {
             return Err(LayouterError::from_description(
@@ -106,7 +116,8 @@ where
             .with_depths()
             .enumerate()
             .for_each(|(ord, (depth, node))| {
-                let new_item = Self::create_from_node(ord, depth, node, &items);
+                let new_item =
+                    Self::create_from_node(ord, depth, node, &items, stringify, emphasize);
                 items.insert(ord, new_item);
             });
 

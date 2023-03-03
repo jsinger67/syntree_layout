@@ -1,8 +1,10 @@
 //! The module with the **Public API that is highly encouraged to be used**.
 
+use std::fmt::{Debug, Display};
+
 use syntree::{index::Index, pointer::Width, Tree};
 
-use crate::{Drawer, Embedding, LayouterError, Result, SvgDrawer, Visualize, VisualizeEmbedder};
+use crate::{Drawer, Embedder, Embedding, LayouterError, Result, SvgDrawer, Visualize};
 
 ///
 /// The Layouter type provides a simple builder mechanism with a fluent API.
@@ -169,7 +171,53 @@ where
     W: Width,
 {
     pub fn embed_with_visualize(self) -> Result<Self> {
-        let embedding = VisualizeEmbedder::embed(self.tree)?;
+        let embedding = Embedder::embed(
+            self.tree,
+            Box::new(|value: &T| value.visualize()),
+            Box::new(|value: &T| value.emphasize()),
+        )?;
+        Ok(Self {
+            tree: self.tree,
+            file_name: self.file_name,
+            drawer: self.drawer,
+            embedding,
+        })
+    }
+}
+
+impl<'t, 'd, 'p, T, I, W> Layouter<'t, 'd, 'p, T, I, W>
+where
+    T: Debug,
+    I: Index,
+    W: Width,
+{
+    pub fn embed_with_debug(self) -> Result<Self> {
+        let embedding = Embedder::embed(
+            self.tree,
+            Box::new(|value: &T| format!("{value:?}")),
+            Box::new(|_value: &T| false),
+        )?;
+        Ok(Self {
+            tree: self.tree,
+            file_name: self.file_name,
+            drawer: self.drawer,
+            embedding,
+        })
+    }
+}
+
+impl<'t, 'd, 'p, T, I, W> Layouter<'t, 'd, 'p, T, I, W>
+where
+    T: Display,
+    I: Index,
+    W: Width,
+{
+    pub fn embed(self) -> Result<Self> {
+        let embedding = Embedder::embed(
+            self.tree,
+            Box::new(|value: &T| format!("{value}")),
+            Box::new(|_value: &T| false),
+        )?;
         Ok(Self {
             tree: self.tree,
             file_name: self.file_name,
