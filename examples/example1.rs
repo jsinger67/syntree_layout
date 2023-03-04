@@ -42,17 +42,17 @@ fn main() -> Result<()> {
 
     let tree = tree.build().unwrap();
     Layouter::new(&tree)
-        .with_file_path(std::path::Path::new("examples/example1_vis.svg"))
+        .with_file_path("examples/example1_vis.svg")
         .embed_with_visualize()?
         .write()?;
 
     Layouter::new(&tree)
-        .with_file_path(std::path::Path::new("examples/example1_deb.svg"))
+        .with_file_path("examples/example1_deb.svg")
         .embed_with_debug()?
         .write()?;
 
     Layouter::new(&tree)
-        .with_file_path(std::path::Path::new("examples/example1_dis.svg"))
+        .with_file_path("examples/example1_dis.svg")
         .embed()?
         .write()
 }

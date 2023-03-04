@@ -148,7 +148,7 @@ fn main() -> std::result::Result<(), anyhow::Error> {
     };
 
     Layouter::new(&tree)
-        .with_file_path(std::path::Path::new("examples/example2.svg"))
+        .with_file_path("examples/example2.svg")
         .embed_with_visualize()
         .map_err(|e| anyhow::anyhow!(e))?
         .write()

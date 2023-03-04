@@ -1,6 +1,7 @@
 //! The module with the **Public API**.
 
 use std::fmt::{Debug, Display};
+use std::path::Path;
 
 use syntree::{index::Index, pointer::Width, Tree};
 
@@ -21,7 +22,7 @@ where
 {
     tree: &'a Tree<T, I, W>,
     drawer: Option<&'a dyn Drawer>,
-    file_name: Option<&'a std::path::Path>,
+    file_name: Option<&'a Path>,
     embedding: Embedding,
 }
 
@@ -64,7 +65,6 @@ where
     /// ```
     /// use syntree_layout::{Layouter, Visualize};
     /// use syntree::{Tree, Builder};
-    /// use std::path::Path;
     ///
     /// struct MyNodeData(i32);
     ///
@@ -76,13 +76,16 @@ where
     ///
     /// let tree: Tree<MyNodeData, _, _> = Builder::new().build().unwrap();
     /// let layouter = Layouter::new(&tree)
-    ///     .with_file_path(Path::new("target/tmp/test.svg"));
+    ///     .with_file_path("target/tmp/test.svg");
     /// ```
     ///
-    pub fn with_file_path(self, path: &'a std::path::Path) -> Self {
+    pub fn with_file_path<P>(self, path: &'a P) -> Self
+    where
+        P: ?Sized + AsRef<Path>,
+    {
         Self {
             tree: self.tree,
-            file_name: Some(path),
+            file_name: Some(path.as_ref()),
             drawer: self.drawer,
             embedding: self.embedding,
         }
@@ -116,7 +119,7 @@ where
     /// let drawer = NilDrawer;
     /// let layouter = Layouter::new(&tree)
     ///     .with_drawer(&drawer)
-    ///     .with_file_path(Path::new("target/tmp/test.svg"));
+    ///     .with_file_path("target/tmp/test.svg");
     /// ```
     ///
     pub fn with_drawer(self, drawer: &'a dyn Drawer) -> Self {
@@ -136,7 +139,6 @@ where
     /// ```
     /// use syntree_layout::{Layouter, Visualize, Result};
     /// use syntree::{Tree, Builder};
-    /// use std::path::Path;
     ///
     /// struct MyNodeData(i32);
     ///
@@ -148,7 +150,7 @@ where
     /// fn test() -> Result<()> {
     ///     let tree: Tree<MyNodeData, _, _> = Builder::new().build().unwrap();
     ///     Ok(Layouter::new(&tree)
-    ///         .with_file_path(Path::new("target/tmp/test.svg"))
+    ///         .with_file_path("target/tmp/test.svg")
     ///         .embed_with_visualize()?
     ///         .write().expect("Failed writing layout"))
     /// }
