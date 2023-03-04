@@ -1,5 +1,7 @@
 //! The module that holds types to embed nodes of a tree into the plane.
 
+use std::fmt;
+
 use syntree::{index::Index, node::Event, pointer::Width, Node, Tree};
 
 use crate::{Embedding, LayouterError, Result};
@@ -36,7 +38,7 @@ where
     ///
     pub(crate) fn embed(
         tree: &Tree<T, I, W>,
-        stringify: impl Fn(&T) -> String,
+        stringify: impl Fn(&T, &mut fmt::Formatter<'_>) -> fmt::Result,
         emphasize: impl Fn(&T) -> bool,
     ) -> Result<Embedding> {
         // Insert all tree items with their indices
@@ -64,10 +66,24 @@ where
         depth: usize,
         node: Node<T, I, W>,
         items: &EmbeddingHelperData<W>,
-        stringify: &impl Fn(&T) -> String,
+        stringify: &impl Fn(&T, &mut fmt::Formatter<'_>) -> fmt::Result,
         emphasize: &impl Fn(&T) -> bool,
     ) -> InternalNode<W> {
-        let text = stringify(node.value());
+        // Wrapper to help evaluate forwarded Display implementation.
+        struct Wrapper<'a, F, T>(&'a F, &'a T);
+
+        impl<F, T> fmt::Display for Wrapper<'_, F, T>
+        where
+            F: Fn(&T, &mut fmt::Formatter<'_>) -> fmt::Result,
+        {
+            #[inline]
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                (self.0)(self.1, f)
+            }
+        }
+
+        let text = Wrapper(stringify, node.value()).to_string();
+
         let y_order = depth;
         let x_center = 0;
         let x_extent = text.len() + 1;
@@ -95,7 +111,7 @@ where
 
     fn create_initial_embedding_data(
         tree: &Tree<T, I, W>,
-        stringify: &impl Fn(&T) -> String,
+        stringify: &impl Fn(&T, &mut fmt::Formatter<'_>) -> fmt::Result,
         emphasize: &impl Fn(&T) -> bool,
     ) -> Result<EmbeddingHelperData<W>> {
         let mut items = EmbeddingHelperData::with_capacity(tree.len());

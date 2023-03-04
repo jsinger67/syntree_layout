@@ -47,7 +47,8 @@ supply it to the drawing procedure.
 ## Example Usage
 
 ```rust
-use std::fmt::Display;
+use std::fmt;
+
 use syntree::Builder;
 use syntree_layout::{Layouter, Result, Visualize};
 
@@ -59,9 +60,10 @@ struct MyNodeData(i32);
 // node representation.
 // You should use `Layouter::embed_with_visualize`
 impl Visualize for MyNodeData {
-    fn visualize(&self) -> std::string::String {
-        format!("Id({})", self.0)
+    fn visualize(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Id({})", self.0)
     }
+
     fn emphasize(&self) -> bool {
         // This simply emphasizes only the leaf nodes.
         // It only works for this example.
@@ -70,8 +72,8 @@ impl Visualize for MyNodeData {
 }
 
 // Display implementation is necessary if you want to use `Layouter::embed`
-impl Display for MyNodeData {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+impl fmt::Display for MyNodeData {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }
 }

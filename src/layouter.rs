@@ -1,6 +1,6 @@
 //! The module with the **Public API**.
 
-use std::fmt::{Debug, Display};
+use std::fmt::{self, Debug, Display};
 use std::path::Path;
 
 use syntree::{index::Index, pointer::Width, Tree};
@@ -33,13 +33,14 @@ where
     /// Creates a new Layouter with the required tree.
     ///
     /// ```
+    /// use std::fmt;
     /// use syntree_layout::{Layouter, Visualize};
     /// use syntree::{Tree, Builder};
     ///
     /// struct MyNodeData(i32);
     ///
     /// impl Visualize for MyNodeData {
-    ///     fn visualize(&self) -> std::string::String { self.0.to_string() }
+    ///     fn visualize(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { write!(f, "{}", self.0) }
     ///     fn emphasize(&self) -> bool { false }
     /// }
     ///
@@ -70,13 +71,14 @@ where
     /// Sets the path of the output file on the layouter.
     ///
     /// ```
+    /// use std::fmt;
     /// use syntree_layout::{Layouter, Visualize};
     /// use syntree::{Tree, Builder};
     ///
     /// struct MyNodeData(i32);
     ///
     /// impl Visualize for MyNodeData {
-    ///     fn visualize(&self) -> std::string::String { self.0.to_string() }
+    ///     fn visualize(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { write!(f, "{}", self.0) }
     ///     fn emphasize(&self) -> bool { false }
     /// }
     ///
@@ -103,9 +105,10 @@ where
     /// If this method is not called the crate's own svg-drawer is used.
     ///
     /// ```
+    /// use std::fmt;
+    /// use std::path::Path;
     /// use syntree_layout::{Drawer, Layouter, EmbeddedNode, Result, Visualize};
     /// use syntree::{Tree, Builder};
-    /// use std::path::Path;
     ///
     /// struct NilDrawer;
     /// impl Drawer for NilDrawer {
@@ -117,7 +120,7 @@ where
     /// struct MyNodeData(i32);
     ///
     /// impl Visualize for MyNodeData {
-    ///     fn visualize(&self) -> std::string::String { self.0.to_string() }
+    ///     fn visualize(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { write!(f, "{}", self.0) }
     ///     fn emphasize(&self) -> bool { false }
     /// }
     ///
@@ -147,13 +150,14 @@ where
     /// output format.
     ///
     /// ```
+    /// use std::fmt;
     /// use syntree_layout::{Layouter, Visualize, Result};
     /// use syntree::{Tree, Builder};
     ///
     /// struct MyNodeData(i32);
     ///
     /// impl Visualize for MyNodeData {
-    ///     fn visualize(&self) -> std::string::String { self.0.to_string() }
+    ///     fn visualize(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { write!(f, "{}", self.0) }
     ///     fn emphasize(&self) -> bool { false }
     /// }
     ///
@@ -204,7 +208,7 @@ where
     pub fn embed_with_visualize(self) -> Result<Self> {
         let embedding = Embedder::embed(
             self.tree,
-            |value: &T| value.visualize(),
+            |value: &T, f| value.visualize(f),
             |value: &T| value.emphasize(),
         )?;
         Ok(Self {
@@ -233,11 +237,8 @@ where
     /// bugs in coding. Please report such panics.
     ///
     pub fn embed_with_debug(self) -> Result<Self> {
-        let embedding = Embedder::embed(
-            self.tree,
-            |value: &T| format!("{value:?}"),
-            |_value: &T| false,
-        )?;
+        let embedding =
+            Embedder::embed(self.tree, |value: &T, f| value.fmt(f), |_value: &T| false)?;
         Ok(Self {
             tree: self.tree,
             file_name: self.file_name,
@@ -264,11 +265,8 @@ where
     /// bugs in coding. Please report such panics.
     ///
     pub fn embed(self) -> Result<Self> {
-        let embedding = Embedder::embed(
-            self.tree,
-            |value: &T| format!("{value}"),
-            |_value: &T| false,
-        )?;
+        let embedding =
+            Embedder::embed(self.tree, |value: &T, f| value.fmt(f), |_value: &T| false)?;
         Ok(Self {
             tree: self.tree,
             file_name: self.file_name,
@@ -296,7 +294,7 @@ where
     ///
     pub fn embed_with(
         &self,
-        stringify: impl Fn(&T) -> String,
+        stringify: impl Fn(&T, &mut fmt::Formatter<'_>) -> fmt::Result,
         emphasize: impl Fn(&T) -> bool,
     ) -> Result<Self> {
         let embedding = Embedder::embed(self.tree, &stringify, &emphasize)?;

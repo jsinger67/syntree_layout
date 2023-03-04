@@ -1,3 +1,5 @@
+use std::fmt;
+
 use syntree::{Builder, Tree};
 use syntree_layout::{Layouter, Visualize};
 
@@ -5,8 +7,8 @@ use syntree_layout::{Layouter, Visualize};
 struct MyNodeData(i32);
 
 impl Visualize for MyNodeData {
-    fn visualize(&self) -> std::string::String {
-        self.0.to_string()
+    fn visualize(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
