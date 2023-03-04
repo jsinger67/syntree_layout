@@ -1,5 +1,5 @@
 use syntree::{Builder, Tree};
-use syntree_layout::{Embedder, Visualize};
+use syntree_layout::{Layouter, Visualize};
 
 #[derive(Debug)]
 struct MyNodeData(i32);
@@ -13,12 +13,8 @@ impl Visualize for MyNodeData {
 #[test]
 fn empty_tree() {
     let tree: Tree<MyNodeData, _, _> = Builder::new().build().unwrap();
-    let embedding = Embedder::embed(
-        &tree,
-        Box::new(|value: &MyNodeData| value.visualize()),
-        Box::new(|value: &MyNodeData| value.emphasize()),
-    )
-    .unwrap();
+    let layouter = Layouter::new(&tree).embed_with_visualize().unwrap();
+    let embedding = layouter.embedding();
     assert!(embedding.is_empty());
 }
 
@@ -28,12 +24,8 @@ fn tree_with_single_node() {
     tree.open(MyNodeData(0)).unwrap();
     tree.close().unwrap();
     let tree = tree.build().unwrap();
-    let embedding = Embedder::embed(
-        &tree,
-        Box::new(|value: &MyNodeData| value.visualize()),
-        Box::new(|value: &MyNodeData| value.emphasize()),
-    )
-    .unwrap();
+    let layouter = Layouter::new(&tree).embed_with_visualize().unwrap();
+    let embedding = layouter.embedding();
     assert_eq!(1, embedding.len());
 
     {
@@ -73,12 +65,8 @@ fn more_complex_tree() {
     let s = String::from_utf8(s).unwrap();
     println!("{s}");
 
-    let embedding = Embedder::embed(
-        &tree,
-        Box::new(|value: &MyNodeData| value.visualize()),
-        Box::new(|value: &MyNodeData| value.emphasize()),
-    )
-    .unwrap();
+    let layouter = Layouter::new(&tree).embed_with_visualize().unwrap();
+    let embedding = layouter.embedding();
 
     assert!(!embedding.is_empty());
     assert_eq!(5, embedding.len());

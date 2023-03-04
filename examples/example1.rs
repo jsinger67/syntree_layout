@@ -1,16 +1,14 @@
 use std::fmt::Display;
-
 use syntree::Builder;
 use syntree_layout::{Layouter, Result, Visualize};
 
 #[derive(Debug)]
 struct MyNodeData(i32);
 
-// You need to implement syntree_layout::Visualize for your nodes data type if you want your onw
+// You need to implement syntree_layout::Visualize for your nodes data type if you want your own
 // node representation.
 impl Visualize for MyNodeData {
     fn visualize(&self) -> std::string::String {
-        // We simply convert the i32 value to string here.
         format!("Id({})", self.0)
     }
     fn emphasize(&self) -> bool {
@@ -36,13 +34,10 @@ fn main() -> Result<()> {
 
     tree.open(MyNodeData(0)).unwrap();
     tree.open(MyNodeData(1)).unwrap();
-    tree.open(MyNodeData(3)).unwrap();
+    tree.token(MyNodeData(3), 1).unwrap();
+    tree.token(MyNodeData(4), 1).unwrap();
     tree.close().unwrap();
-    tree.open(MyNodeData(4)).unwrap();
-    tree.close().unwrap();
-    tree.close().unwrap();
-    tree.open(MyNodeData(2)).unwrap();
-    tree.close().unwrap();
+    tree.token(MyNodeData(2), 1).unwrap();
     tree.close().unwrap();
 
     let tree = tree.build().unwrap();

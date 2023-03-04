@@ -3,18 +3,18 @@
 use syntree::{index::Index, node::Event, pointer::Width, Node, Tree};
 
 use crate::{
-    internal::node::{EmbeddingHelperData, InternalNode},
+    layouter::{EmphasizeFunction, StringifyFunction},
     Embedding, LayouterError, Result,
 };
 
-type StringifyFunction<T> = Box<dyn Fn(&T) -> String>;
-type EmphasizeFunction<T> = Box<dyn Fn(&T) -> bool>;
+use super::node::{EmbeddingHelperData, InternalNode};
 
 ///
-/// The Embedder type provides a single public method `embed` to arrange nodes of a tree into the
-/// plane.
+/// The Embedder type provides a single (accessible) method `embed` to arrange nodes of a tree into
+/// the plane.
+/// It is an internal type used by the public API [crate::Layouter].
 ///
-pub struct Embedder<T, I, W>
+pub(crate) struct Embedder<T, I, W>
 where
     I: Index,
     W: Width,
@@ -37,11 +37,7 @@ where
     /// The method should not panic. If you encounter a panic this should be originated from
     /// bugs in coding. Please report such panics.
     ///
-    /// # Complexity
-    ///
-    /// The algorithm is of time complexity class O(n).
-    ///
-    pub fn embed(
+    pub(crate) fn embed(
         tree: &Tree<T, I, W>,
         stringify: StringifyFunction<T>,
         emphasize: EmphasizeFunction<T>,
@@ -108,7 +104,7 @@ where
         let mut items = EmbeddingHelperData::with_capacity(tree.len());
         if tree.children().count() > 1 {
             return Err(LayouterError::from_description(
-                "Currently we support only one root".to_string(),
+                "Currently we support only one root",
             ));
         }
 
@@ -158,16 +154,26 @@ where
 
         let parents_in_layer = node_ids_in_layer
             .iter()
-            .map(|ord| items.get_by_ord(*ord).unwrap().parent)
-            .collect::<Vec<Option<usize>>>();
+            .map(|ord| {
+                Ok(items
+                    .get_by_ord(*ord)
+                    .ok_or(LayouterError::from_description("Expecting existing node"))?
+                    .parent)
+            })
+            .collect::<Result<Vec<Option<usize>>>>()?;
 
         for p in parents_in_layer {
             let nodes_in_layer_per_parent = node_ids_in_layer
                 .iter()
                 .filter_map(|ord| {
-                    if items.get_by_ord(*ord).unwrap().parent == p {
-                        Some(*ord)
+                    if let Some(node) = items.get_by_ord(*ord) {
+                        if node.parent == p {
+                            Some(*ord)
+                        } else {
+                            None
+                        }
                     } else {
+                        debug_assert!(false, "Expecting existing node");
                         None
                     }
                 })
@@ -180,9 +186,7 @@ where
                         placed_parent_item.x_center - placed_parent_item.x_extent_of_children / 2
                     } else {
                         // This really should not happen
-                        return Err(LayouterError::from_description(
-                            "Some item expected here!".to_string(),
-                        ));
+                        return Err(LayouterError::from_description("Some item expected here!"));
                     }
                 } else {
                     // `None` means we are in layer 0

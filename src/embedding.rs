@@ -1,17 +1,19 @@
+//! The module with the data structures used in the **Public API**.
+
 use syntree::pointer::Width;
 
 use crate::internal::node::InternalNode;
 
 ///
-/// The Embedding is the interface to drawers that need the embedding
-/// to transform it to their own format.
+/// The Embedding is the interface to drawers that need the embedding for the purpose
+/// to transform it to their own output format.
+/// It is accessible at the [Layouter][crate::Layouter::embedding] after calling an embed method
 ///
 pub type Embedding = Vec<EmbeddedNode>;
 
 ///
 /// The [EmbeddedNode] is the embedding information for one single tree node.
 /// It is used only in a collection type `Embedding`.
-/// External API: keep stable.
 ///
 #[derive(Debug, Clone, Default)]
 pub struct EmbeddedNode {
@@ -23,9 +25,10 @@ pub struct EmbeddedNode {
     pub x_extent: usize,
     /// The maximum extent over the nodes text representation and the sum of all children's x-extent
     pub x_extent_children: usize,
-    /// The text representation of the nodes data - created by the `Visualize` trait's implementation
+    /// The text representation of the nodes data - created e.g. by the `Visualize` trait's
+    /// implementation, by the node type's Display or Debug implementation or by custom methods
     pub text: String,
-    /// The *emphasize* property obtained from the `Visualize` trait
+    /// The *emphasize* property obtained from the `Visualize` trait or via a custom method
     pub is_emphasized: bool,
     /// The parent's `ord`, if there is one
     pub parent: Option<usize>,

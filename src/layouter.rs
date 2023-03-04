@@ -1,10 +1,15 @@
-//! The module with the **Public API that is highly encouraged to be used**.
+//! The module with the **Public API**.
 
 use std::fmt::{Debug, Display};
 
 use syntree::{index::Index, pointer::Width, Tree};
 
-use crate::{Drawer, Embedder, Embedding, LayouterError, Result, SvgDrawer, Visualize};
+use crate::{
+    internal::embedder::Embedder, Drawer, Embedding, LayouterError, Result, SvgDrawer, Visualize,
+};
+
+pub type StringifyFunction<T> = Box<dyn Fn(&T) -> String>;
+pub type EmphasizeFunction<T> = Box<dyn Fn(&T) -> bool>;
 
 ///
 /// The Layouter type provides a simple builder mechanism with a fluent API.
@@ -71,7 +76,7 @@ where
     ///
     /// let tree: Tree<MyNodeData, _, _> = Builder::new().build().unwrap();
     /// let layouter = Layouter::new(&tree)
-    ///     .with_file_path(Path::new("test.svg"));
+    ///     .with_file_path(Path::new("target/tmp/test.svg"));
     /// ```
     ///
     pub fn with_file_path(self, path: &'p std::path::Path) -> Self {
@@ -111,7 +116,7 @@ where
     /// let drawer = NilDrawer;
     /// let layouter = Layouter::new(&tree)
     ///     .with_drawer(&drawer)
-    ///     .with_file_path(Path::new("test.svg"));
+    ///     .with_file_path(Path::new("target/tmp/test.svg"));
     /// ```
     ///
     pub fn with_drawer(self, drawer: &'d dyn Drawer) -> Self {
@@ -143,7 +148,7 @@ where
     /// fn test() -> Result<()> {
     ///     let tree: Tree<MyNodeData, _, _> = Builder::new().build().unwrap();
     ///     Ok(Layouter::new(&tree)
-    ///         .with_file_path(Path::new("test.svg"))
+    ///         .with_file_path(Path::new("target/tmp/test.svg"))
     ///         .embed_with_visualize()?
     ///         .write().expect("Failed writing layout"))
     /// }
@@ -154,13 +159,18 @@ where
     pub fn write(&self) -> Result<()> {
         if self.file_name.is_none() {
             Err(LayouterError::from_description(
-                "No output file name given - use Layouter::with_file_path.".to_string(),
+                "No output file name given - use Layouter::with_file_path.",
             ))
         } else {
             let default_drawer = SvgDrawer::new();
             let drawer = self.drawer.unwrap_or(&default_drawer);
             drawer.draw(self.file_name.unwrap(), &self.embedding)
         }
+    }
+
+    /// Provides access to the embedding data for other uses than drawing, e.g. for tests
+    pub fn embedding(&self) -> &Embedding {
+        &self.embedding
     }
 }
 
@@ -170,6 +180,16 @@ where
     I: Index,
     W: Width,
 {
+    ///
+    /// This method creates an embedding of the nodes of the given tree in the plane.
+    /// The nodes representation is taken form the [Visualize][crate::Visualize] implementation of
+    /// type T.
+    ///
+    /// # Panics
+    ///
+    /// The method should not panic. If you encounter a panic this should be originated from
+    /// bugs in coding. Please report such panics.
+    ///
     pub fn embed_with_visualize(self) -> Result<Self> {
         let embedding = Embedder::embed(
             self.tree,
@@ -191,6 +211,15 @@ where
     I: Index,
     W: Width,
 {
+    ///
+    /// This method creates an embedding of the nodes of the given tree in the plane.
+    /// The nodes representation is taken form the [Debug] implementation of type T.
+    ///
+    /// # Panics
+    ///
+    /// The method should not panic. If you encounter a panic this should be originated from
+    /// bugs in coding. Please report such panics.
+    ///
     pub fn embed_with_debug(self) -> Result<Self> {
         let embedding = Embedder::embed(
             self.tree,
@@ -212,12 +241,51 @@ where
     I: Index,
     W: Width,
 {
+    ///
+    /// This method creates an embedding of the nodes of the given tree in the plane.
+    /// The nodes representation is taken form the [Display] implementation of type T.
+    ///
+    /// # Panics
+    ///
+    /// The method should not panic. If you encounter a panic this should be originated from
+    /// bugs in coding. Please report such panics.
+    ///
     pub fn embed(self) -> Result<Self> {
         let embedding = Embedder::embed(
             self.tree,
             Box::new(|value: &T| format!("{value}")),
             Box::new(|_value: &T| false),
         )?;
+        Ok(Self {
+            tree: self.tree,
+            file_name: self.file_name,
+            drawer: self.drawer,
+            embedding,
+        })
+    }
+}
+
+impl<'t, 'd, 'p, T, I, W> Layouter<'t, 'd, 'p, T, I, W>
+where
+    I: Index,
+    W: Width,
+{
+    ///
+    /// This method creates an embedding of the nodes of the given tree in the plane.
+    /// The nodes representation is taken form the two given functions
+    /// [stringify][Layouter::embed_with] and [emphasize][Layouter::embed_with].
+    ///
+    /// # Panics
+    ///
+    /// The method should not panic. If you encounter a panic this should be originated from
+    /// bugs in coding. Please report such panics.
+    ///
+    pub fn embed_with(
+        &self,
+        stringify: StringifyFunction<T>,
+        emphasize: EmphasizeFunction<T>,
+    ) -> Result<Self> {
+        let embedding = Embedder::embed(self.tree, stringify, emphasize)?;
         Ok(Self {
             tree: self.tree,
             file_name: self.file_name,
