@@ -8,3 +8,16 @@ use crate::{EmbeddedNode, Result};
 pub trait Drawer {
     fn draw(&self, file_name: &std::path::Path, embedding: &[EmbeddedNode]) -> Result<()>;
 }
+
+struct DummyDrawer;
+
+impl Drawer for DummyDrawer {
+    #[inline]
+    fn draw(&self, _: &std::path::Path, _: &[EmbeddedNode]) -> Result<()> {
+        Ok(())
+    }
+}
+
+// Test to assert that drawer is object safe, even though this is *for now*
+// ensured in the bound used in `Layouter::new`.
+const _: &dyn Drawer = &DummyDrawer;

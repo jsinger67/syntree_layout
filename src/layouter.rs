@@ -15,18 +15,19 @@ pub type EmphasizeFunction<T> = Box<dyn Fn(&T) -> bool>;
 ///
 /// The Layouter type provides a simple builder mechanism with a fluent API.
 ///
-pub struct Layouter<'a, T, I, W>
+pub struct Layouter<'a, T, I, W, D>
 where
     I: Index,
     W: Width,
+    D: ?Sized + Drawer,
 {
     tree: &'a Tree<T, I, W>,
-    drawer: Option<&'a dyn Drawer>,
+    drawer: &'a D,
     file_name: Option<&'a Path>,
     embedding: Embedding,
 }
 
-impl<'a, T, I, W> Layouter<'a, T, I, W>
+impl<'a, T, I, W> Layouter<'a, T, I, W, SvgDrawer>
 where
     I: Index,
     W: Width,
@@ -51,14 +52,23 @@ where
     /// ```
     ///
     pub fn new(tree: &'a Tree<T, I, W>) -> Self {
+        static DEFAULT_DRAWER: SvgDrawer = SvgDrawer::new();
+
         Self {
             tree,
-            drawer: None,
+            drawer: &DEFAULT_DRAWER,
             file_name: None,
             embedding: Vec::default(),
         }
     }
+}
 
+impl<'a, T, I, W, D> Layouter<'a, T, I, W, D>
+where
+    I: Index,
+    W: Width,
+    D: ?Sized + Drawer,
+{
     ///
     /// Sets the path of the output file on the layouter.
     ///
@@ -122,11 +132,14 @@ where
     ///     .with_file_path("target/tmp/test.svg");
     /// ```
     ///
-    pub fn with_drawer(self, drawer: &'a dyn Drawer) -> Self {
-        Self {
+    pub fn with_drawer<U>(self, drawer: &'a U) -> Layouter<T, I, W, U>
+    where
+        U: Drawer,
+    {
+        Layouter {
             tree: self.tree,
             file_name: self.file_name,
-            drawer: Some(drawer),
+            drawer,
             embedding: self.embedding,
         }
     }
@@ -159,15 +172,13 @@ where
     /// ```
     ///
     pub fn write(&self) -> Result<()> {
-        if self.file_name.is_none() {
-            Err(LayouterError::from_description(
+        let Some(file_name) = &self.file_name else {
+            return Err(LayouterError::from_description(
                 "No output file name given - use Layouter::with_file_path.",
-            ))
-        } else {
-            let default_drawer = SvgDrawer::new();
-            let drawer = self.drawer.unwrap_or(&default_drawer);
-            drawer.draw(self.file_name.unwrap(), &self.embedding)
-        }
+            ));
+        };
+
+        self.drawer.draw(file_name, &self.embedding)
     }
 
     /// Provides access to the embedding data for other uses than drawing, e.g. for tests
@@ -176,11 +187,12 @@ where
     }
 }
 
-impl<'a, T, I, W> Layouter<'a, T, I, W>
+impl<'a, T, I, W, D> Layouter<'a, T, I, W, D>
 where
     T: Visualize,
     I: Index,
     W: Width,
+    D: ?Sized + Drawer,
 {
     ///
     /// This method creates an embedding of the nodes of the given tree in the plane.
@@ -207,11 +219,12 @@ where
     }
 }
 
-impl<'a, T, I, W> Layouter<'a, T, I, W>
+impl<'a, T, I, W, D> Layouter<'a, T, I, W, D>
 where
     T: Debug,
     I: Index,
     W: Width,
+    D: ?Sized + Drawer,
 {
     ///
     /// This method creates an embedding of the nodes of the given tree in the plane.
@@ -237,11 +250,12 @@ where
     }
 }
 
-impl<'a, T, I, W> Layouter<'a, T, I, W>
+impl<'a, T, I, W, D> Layouter<'a, T, I, W, D>
 where
     T: Display,
     I: Index,
     W: Width,
+    D: ?Sized + Drawer,
 {
     ///
     /// This method creates an embedding of the nodes of the given tree in the plane.
@@ -267,10 +281,11 @@ where
     }
 }
 
-impl<'a, T, I, W> Layouter<'a, T, I, W>
+impl<'a, T, I, W, D> Layouter<'a, T, I, W, D>
 where
     I: Index,
     W: Width,
+    D: Drawer,
 {
     ///
     /// This method creates an embedding of the nodes of the given tree in the plane.

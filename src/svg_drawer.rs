@@ -21,7 +21,7 @@ pub struct SvgDrawer;
 
 impl SvgDrawer {
     /// Method to create a fresh instance of the `SvgDrawer` type.
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self
     }
 
