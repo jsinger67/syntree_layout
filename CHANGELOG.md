@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 * Add CHANGELOG
 * Update year in MIT license file
 * Changed version format of syntree reference in Cargo.toml
+* Cleaned up example2
 
 ## v0.1.0 - 2023-03-04
 

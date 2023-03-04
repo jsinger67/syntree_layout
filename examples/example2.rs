@@ -1,27 +1,7 @@
-use std::fmt::Display;
 use syntree_layout::{Layouter, Visualize};
 
 #[derive(Debug)]
 struct MyNodeData(i32);
-
-// You need to implement syntree_layout::Visualize for your nodes data type if you want your own
-// node representation.
-impl Visualize for MyNodeData {
-    fn visualize(&self) -> std::string::String {
-        format!("Id({})", self.0)
-    }
-    fn emphasize(&self) -> bool {
-        // This simply emphasizes only the leaf nodes.
-        // It only works for this example.
-        self.0 > 1
-    }
-}
-
-impl Display for MyNodeData {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{}", self.0)
-    }
-}
 
 enum Ast {
     Calc,
