@@ -9,9 +9,6 @@ use crate::{
     internal::embedder::Embedder, Drawer, Embedding, LayouterError, Result, SvgDrawer, Visualize,
 };
 
-pub type StringifyFunction<T> = Box<dyn Fn(&T) -> String>;
-pub type EmphasizeFunction<T> = Box<dyn Fn(&T) -> bool>;
-
 ///
 /// The Layouter type provides a simple builder mechanism with a fluent API.
 ///
@@ -207,8 +204,8 @@ where
     pub fn embed_with_visualize(self) -> Result<Self> {
         let embedding = Embedder::embed(
             self.tree,
-            Box::new(|value: &T| value.visualize()),
-            Box::new(|value: &T| value.emphasize()),
+            |value: &T| value.visualize(),
+            |value: &T| value.emphasize(),
         )?;
         Ok(Self {
             tree: self.tree,
@@ -238,8 +235,8 @@ where
     pub fn embed_with_debug(self) -> Result<Self> {
         let embedding = Embedder::embed(
             self.tree,
-            Box::new(|value: &T| format!("{value:?}")),
-            Box::new(|_value: &T| false),
+            |value: &T| format!("{value:?}"),
+            |_value: &T| false,
         )?;
         Ok(Self {
             tree: self.tree,
@@ -269,8 +266,8 @@ where
     pub fn embed(self) -> Result<Self> {
         let embedding = Embedder::embed(
             self.tree,
-            Box::new(|value: &T| format!("{value}")),
-            Box::new(|_value: &T| false),
+            |value: &T| format!("{value}"),
+            |_value: &T| false,
         )?;
         Ok(Self {
             tree: self.tree,
@@ -299,10 +296,10 @@ where
     ///
     pub fn embed_with(
         &self,
-        stringify: StringifyFunction<T>,
-        emphasize: EmphasizeFunction<T>,
+        stringify: impl Fn(&T) -> String,
+        emphasize: impl Fn(&T) -> bool,
     ) -> Result<Self> {
-        let embedding = Embedder::embed(self.tree, stringify, emphasize)?;
+        let embedding = Embedder::embed(self.tree, &stringify, &emphasize)?;
         Ok(Self {
             tree: self.tree,
             file_name: self.file_name,
