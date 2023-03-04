@@ -14,18 +14,18 @@ pub type EmphasizeFunction<T> = Box<dyn Fn(&T) -> bool>;
 ///
 /// The Layouter type provides a simple builder mechanism with a fluent API.
 ///
-pub struct Layouter<'t, 'd, 'p, T, I, W>
+pub struct Layouter<'a, T, I, W>
 where
     I: Index,
     W: Width,
 {
-    tree: &'t Tree<T, I, W>,
-    drawer: Option<&'d dyn Drawer>,
-    file_name: Option<&'p std::path::Path>,
+    tree: &'a Tree<T, I, W>,
+    drawer: Option<&'a dyn Drawer>,
+    file_name: Option<&'a std::path::Path>,
     embedding: Embedding,
 }
 
-impl<'t, 'd, 'p, T, I, W> Layouter<'t, 'd, 'p, T, I, W>
+impl<'a, T, I, W> Layouter<'a, T, I, W>
 where
     I: Index,
     W: Width,
@@ -49,7 +49,7 @@ where
     /// let layouter = Layouter::new(&tree);
     /// ```
     ///
-    pub fn new(tree: &'t Tree<T, I, W>) -> Self {
+    pub fn new(tree: &'a Tree<T, I, W>) -> Self {
         Self {
             tree,
             drawer: None,
@@ -79,7 +79,7 @@ where
     ///     .with_file_path(Path::new("target/tmp/test.svg"));
     /// ```
     ///
-    pub fn with_file_path(self, path: &'p std::path::Path) -> Self {
+    pub fn with_file_path(self, path: &'a std::path::Path) -> Self {
         Self {
             tree: self.tree,
             file_name: Some(path),
@@ -89,7 +89,7 @@ where
     }
 
     ///
-    /// Sets a different drawer when you don't want to use the default svg-drawer.
+    /// Sets a different drawer when you don'a want to use the default svg-drawer.
     /// If this method is not called the crate's own svg-drawer is used.
     ///
     /// ```
@@ -119,7 +119,7 @@ where
     ///     .with_file_path(Path::new("target/tmp/test.svg"));
     /// ```
     ///
-    pub fn with_drawer(self, drawer: &'d dyn Drawer) -> Self {
+    pub fn with_drawer(self, drawer: &'a dyn Drawer) -> Self {
         Self {
             tree: self.tree,
             file_name: self.file_name,
@@ -174,7 +174,7 @@ where
     }
 }
 
-impl<'t, 'd, 'p, T, I, W> Layouter<'t, 'd, 'p, T, I, W>
+impl<'a, T, I, W> Layouter<'a, T, I, W>
 where
     T: Visualize,
     I: Index,
@@ -205,7 +205,7 @@ where
     }
 }
 
-impl<'t, 'd, 'p, T, I, W> Layouter<'t, 'd, 'p, T, I, W>
+impl<'a, T, I, W> Layouter<'a, T, I, W>
 where
     T: Debug,
     I: Index,
@@ -235,7 +235,7 @@ where
     }
 }
 
-impl<'t, 'd, 'p, T, I, W> Layouter<'t, 'd, 'p, T, I, W>
+impl<'a, T, I, W> Layouter<'a, T, I, W>
 where
     T: Display,
     I: Index,
@@ -265,7 +265,7 @@ where
     }
 }
 
-impl<'t, 'd, 'p, T, I, W> Layouter<'t, 'd, 'p, T, I, W>
+impl<'a, T, I, W> Layouter<'a, T, I, W>
 where
     I: Index,
     W: Width,
