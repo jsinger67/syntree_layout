@@ -1,3 +1,4 @@
+use std::fmt;
 use syntree_layout::{Layouter, Visualize};
 
 #[derive(Debug)]
@@ -37,39 +38,41 @@ enum Ast {
 }
 
 impl Visualize for Ast {
-    fn visualize(&self) -> String {
-        match self {
-            Ast::Calc => "calc".to_string(),
-            Ast::CalcLst1 => "calc_lst1".to_string(),
-            Ast::CalcLst1Itm1 => "calc_lst1_itm1".to_string(),
-            Ast::Instruction => "instruction".to_string(),
-            Ast::Assignment => "assignment".to_string(),
-            Ast::AssignItem => "assign_item".to_string(),
-            Ast::Id => "id".to_string(),
-            Ast::AssignOp => "assign_op".to_string(),
-            Ast::LocigalOr => "locigal_or".to_string(),
-            Ast::LocigalAnd => "locigal_and".to_string(),
-            Ast::BitwiseOr => "bitwise_or".to_string(),
-            Ast::BitwiseAnd => "bitwise_and".to_string(),
-            Ast::Equality => "equality".to_string(),
-            Ast::Relational => "relational".to_string(),
-            Ast::BitwiseShift => "bitwise_shift".to_string(),
-            Ast::Sum => "sum".to_string(),
-            Ast::Mult => "mult".to_string(),
-            Ast::Power => "power".to_string(),
-            Ast::Factor => "factor".to_string(),
-            Ast::Number => "number".to_string(),
-            Ast::MultLst1 => "mult_lst1".to_string(),
-            Ast::MultLst1Itm1 => "mult_lst1_itm1".to_string(),
-            Ast::MultItem => "mult_item".to_string(),
-            Ast::MultOp => "mult_op".to_string(),
-            Ast::SumLst1 => "sum_lst1".to_string(),
-            Ast::SumLst1Itm1 => "sum_lst1_itm1".to_string(),
-            Ast::SumItem => "sum_item".to_string(),
-            Ast::AddOp => "add_op".to_string(),
-            Ast::Plus => "plus".to_string(),
-            Ast::Tok(s) => s.to_string(),
-        }
+    fn visualize(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            Ast::Calc => "calc",
+            Ast::CalcLst1 => "calc_lst1",
+            Ast::CalcLst1Itm1 => "calc_lst1_itm1",
+            Ast::Instruction => "instruction",
+            Ast::Assignment => "assignment",
+            Ast::AssignItem => "assign_item",
+            Ast::Id => "id",
+            Ast::AssignOp => "assign_op",
+            Ast::LocigalOr => "locigal_or",
+            Ast::LocigalAnd => "locigal_and",
+            Ast::BitwiseOr => "bitwise_or",
+            Ast::BitwiseAnd => "bitwise_and",
+            Ast::Equality => "equality",
+            Ast::Relational => "relational",
+            Ast::BitwiseShift => "bitwise_shift",
+            Ast::Sum => "sum",
+            Ast::Mult => "mult",
+            Ast::Power => "power",
+            Ast::Factor => "factor",
+            Ast::Number => "number",
+            Ast::MultLst1 => "mult_lst1",
+            Ast::MultLst1Itm1 => "mult_lst1_itm1",
+            Ast::MultItem => "mult_item",
+            Ast::MultOp => "mult_op",
+            Ast::SumLst1 => "sum_lst1",
+            Ast::SumLst1Itm1 => "sum_lst1_itm1",
+            Ast::SumItem => "sum_item",
+            Ast::AddOp => "add_op",
+            Ast::Plus => "plus",
+            Ast::Tok(s) => s,
+        };
+
+        write!(f, "{s}")
     }
 
     fn emphasize(&self) -> bool {
@@ -148,7 +151,7 @@ fn main() -> std::result::Result<(), anyhow::Error> {
     };
 
     Layouter::new(&tree)
-        .with_file_path(std::path::Path::new("examples/example2.svg"))
+        .with_file_path("examples/example2.svg")
         .embed_with_visualize()
         .map_err(|e| anyhow::anyhow!(e))?
         .write()

@@ -1,6 +1,7 @@
 //! The module with the **Public API**.
 
-use std::fmt::{Debug, Display};
+use std::fmt::{self, Debug, Display};
+use std::path::Path;
 
 use syntree::{index::Index, pointer::Width, Tree};
 
@@ -8,24 +9,22 @@ use crate::{
     internal::embedder::Embedder, Drawer, Embedding, LayouterError, Result, SvgDrawer, Visualize,
 };
 
-pub type StringifyFunction<T> = Box<dyn Fn(&T) -> String>;
-pub type EmphasizeFunction<T> = Box<dyn Fn(&T) -> bool>;
-
 ///
 /// The Layouter type provides a simple builder mechanism with a fluent API.
 ///
-pub struct Layouter<'t, 'd, 'p, T, I, W>
+pub struct Layouter<'a, T, I, W, D>
 where
     I: Index,
     W: Width,
+    D: ?Sized + Drawer,
 {
-    tree: &'t Tree<T, I, W>,
-    drawer: Option<&'d dyn Drawer>,
-    file_name: Option<&'p std::path::Path>,
+    tree: &'a Tree<T, I, W>,
+    drawer: &'a D,
+    file_name: Option<&'a Path>,
     embedding: Embedding,
 }
 
-impl<'t, 'd, 'p, T, I, W> Layouter<'t, 'd, 'p, T, I, W>
+impl<'a, T, I, W> Layouter<'a, T, I, W, SvgDrawer>
 where
     I: Index,
     W: Width,
@@ -34,13 +33,14 @@ where
     /// Creates a new Layouter with the required tree.
     ///
     /// ```
+    /// use std::fmt;
     /// use syntree_layout::{Layouter, Visualize};
     /// use syntree::{Tree, Builder};
     ///
     /// struct MyNodeData(i32);
     ///
     /// impl Visualize for MyNodeData {
-    ///     fn visualize(&self) -> std::string::String { self.0.to_string() }
+    ///     fn visualize(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { write!(f, "{}", self.0) }
     ///     fn emphasize(&self) -> bool { false }
     /// }
     ///
@@ -49,53 +49,66 @@ where
     /// let layouter = Layouter::new(&tree);
     /// ```
     ///
-    pub fn new(tree: &'t Tree<T, I, W>) -> Self {
+    pub fn new(tree: &'a Tree<T, I, W>) -> Self {
+        static DEFAULT_DRAWER: SvgDrawer = SvgDrawer::new();
+
         Self {
             tree,
-            drawer: None,
+            drawer: &DEFAULT_DRAWER,
             file_name: None,
             embedding: Vec::default(),
         }
     }
+}
 
+impl<'a, T, I, W, D> Layouter<'a, T, I, W, D>
+where
+    I: Index,
+    W: Width,
+    D: ?Sized + Drawer,
+{
     ///
     /// Sets the path of the output file on the layouter.
     ///
     /// ```
+    /// use std::fmt;
     /// use syntree_layout::{Layouter, Visualize};
     /// use syntree::{Tree, Builder};
-    /// use std::path::Path;
     ///
     /// struct MyNodeData(i32);
     ///
     /// impl Visualize for MyNodeData {
-    ///     fn visualize(&self) -> std::string::String { self.0.to_string() }
+    ///     fn visualize(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { write!(f, "{}", self.0) }
     ///     fn emphasize(&self) -> bool { false }
     /// }
     ///
     ///
     /// let tree: Tree<MyNodeData, _, _> = Builder::new().build().unwrap();
     /// let layouter = Layouter::new(&tree)
-    ///     .with_file_path(Path::new("target/tmp/test.svg"));
+    ///     .with_file_path("target/tmp/test.svg");
     /// ```
     ///
-    pub fn with_file_path(self, path: &'p std::path::Path) -> Self {
+    pub fn with_file_path<P>(self, path: &'a P) -> Self
+    where
+        P: ?Sized + AsRef<Path>,
+    {
         Self {
             tree: self.tree,
-            file_name: Some(path),
+            file_name: Some(path.as_ref()),
             drawer: self.drawer,
             embedding: self.embedding,
         }
     }
 
     ///
-    /// Sets a different drawer when you don't want to use the default svg-drawer.
+    /// Sets a different drawer when you don'a want to use the default svg-drawer.
     /// If this method is not called the crate's own svg-drawer is used.
     ///
     /// ```
+    /// use std::fmt;
+    /// use std::path::Path;
     /// use syntree_layout::{Drawer, Layouter, EmbeddedNode, Result, Visualize};
     /// use syntree::{Tree, Builder};
-    /// use std::path::Path;
     ///
     /// struct NilDrawer;
     /// impl Drawer for NilDrawer {
@@ -107,7 +120,7 @@ where
     /// struct MyNodeData(i32);
     ///
     /// impl Visualize for MyNodeData {
-    ///     fn visualize(&self) -> std::string::String { self.0.to_string() }
+    ///     fn visualize(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { write!(f, "{}", self.0) }
     ///     fn emphasize(&self) -> bool { false }
     /// }
     ///
@@ -116,14 +129,17 @@ where
     /// let drawer = NilDrawer;
     /// let layouter = Layouter::new(&tree)
     ///     .with_drawer(&drawer)
-    ///     .with_file_path(Path::new("target/tmp/test.svg"));
+    ///     .with_file_path("target/tmp/test.svg");
     /// ```
     ///
-    pub fn with_drawer(self, drawer: &'d dyn Drawer) -> Self {
-        Self {
+    pub fn with_drawer<U>(self, drawer: &'a U) -> Layouter<T, I, W, U>
+    where
+        U: Drawer,
+    {
+        Layouter {
             tree: self.tree,
             file_name: self.file_name,
-            drawer: Some(drawer),
+            drawer,
             embedding: self.embedding,
         }
     }
@@ -134,21 +150,21 @@ where
     /// output format.
     ///
     /// ```
+    /// use std::fmt;
     /// use syntree_layout::{Layouter, Visualize, Result};
     /// use syntree::{Tree, Builder};
-    /// use std::path::Path;
     ///
     /// struct MyNodeData(i32);
     ///
     /// impl Visualize for MyNodeData {
-    ///     fn visualize(&self) -> std::string::String { self.0.to_string() }
+    ///     fn visualize(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { write!(f, "{}", self.0) }
     ///     fn emphasize(&self) -> bool { false }
     /// }
     ///
     /// fn test() -> Result<()> {
     ///     let tree: Tree<MyNodeData, _, _> = Builder::new().build().unwrap();
     ///     Ok(Layouter::new(&tree)
-    ///         .with_file_path(Path::new("target/tmp/test.svg"))
+    ///         .with_file_path("target/tmp/test.svg")
     ///         .embed_with_visualize()?
     ///         .write().expect("Failed writing layout"))
     /// }
@@ -157,15 +173,13 @@ where
     /// ```
     ///
     pub fn write(&self) -> Result<()> {
-        if self.file_name.is_none() {
-            Err(LayouterError::from_description(
+        let Some(file_name) = &self.file_name else {
+            return Err(LayouterError::from_description(
                 "No output file name given - use Layouter::with_file_path.",
-            ))
-        } else {
-            let default_drawer = SvgDrawer::new();
-            let drawer = self.drawer.unwrap_or(&default_drawer);
-            drawer.draw(self.file_name.unwrap(), &self.embedding)
-        }
+            ));
+        };
+
+        self.drawer.draw(file_name, &self.embedding)
     }
 
     /// Provides access to the embedding data for other uses than drawing, e.g. for tests
@@ -174,11 +188,12 @@ where
     }
 }
 
-impl<'t, 'd, 'p, T, I, W> Layouter<'t, 'd, 'p, T, I, W>
+impl<'a, T, I, W, D> Layouter<'a, T, I, W, D>
 where
     T: Visualize,
     I: Index,
     W: Width,
+    D: ?Sized + Drawer,
 {
     ///
     /// This method creates an embedding of the nodes of the given tree in the plane.
@@ -193,8 +208,8 @@ where
     pub fn embed_with_visualize(self) -> Result<Self> {
         let embedding = Embedder::embed(
             self.tree,
-            Box::new(|value: &T| value.visualize()),
-            Box::new(|value: &T| value.emphasize()),
+            |value: &T, f| value.visualize(f),
+            |value: &T| value.emphasize(),
         )?;
         Ok(Self {
             tree: self.tree,
@@ -205,11 +220,12 @@ where
     }
 }
 
-impl<'t, 'd, 'p, T, I, W> Layouter<'t, 'd, 'p, T, I, W>
+impl<'a, T, I, W, D> Layouter<'a, T, I, W, D>
 where
     T: Debug,
     I: Index,
     W: Width,
+    D: ?Sized + Drawer,
 {
     ///
     /// This method creates an embedding of the nodes of the given tree in the plane.
@@ -221,11 +237,8 @@ where
     /// bugs in coding. Please report such panics.
     ///
     pub fn embed_with_debug(self) -> Result<Self> {
-        let embedding = Embedder::embed(
-            self.tree,
-            Box::new(|value: &T| format!("{value:?}")),
-            Box::new(|_value: &T| false),
-        )?;
+        let embedding =
+            Embedder::embed(self.tree, |value: &T, f| value.fmt(f), |_value: &T| false)?;
         Ok(Self {
             tree: self.tree,
             file_name: self.file_name,
@@ -235,11 +248,12 @@ where
     }
 }
 
-impl<'t, 'd, 'p, T, I, W> Layouter<'t, 'd, 'p, T, I, W>
+impl<'a, T, I, W, D> Layouter<'a, T, I, W, D>
 where
     T: Display,
     I: Index,
     W: Width,
+    D: ?Sized + Drawer,
 {
     ///
     /// This method creates an embedding of the nodes of the given tree in the plane.
@@ -251,11 +265,8 @@ where
     /// bugs in coding. Please report such panics.
     ///
     pub fn embed(self) -> Result<Self> {
-        let embedding = Embedder::embed(
-            self.tree,
-            Box::new(|value: &T| format!("{value}")),
-            Box::new(|_value: &T| false),
-        )?;
+        let embedding =
+            Embedder::embed(self.tree, |value: &T, f| value.fmt(f), |_value: &T| false)?;
         Ok(Self {
             tree: self.tree,
             file_name: self.file_name,
@@ -265,10 +276,11 @@ where
     }
 }
 
-impl<'t, 'd, 'p, T, I, W> Layouter<'t, 'd, 'p, T, I, W>
+impl<'a, T, I, W, D> Layouter<'a, T, I, W, D>
 where
     I: Index,
     W: Width,
+    D: Drawer,
 {
     ///
     /// This method creates an embedding of the nodes of the given tree in the plane.
@@ -282,10 +294,10 @@ where
     ///
     pub fn embed_with(
         &self,
-        stringify: StringifyFunction<T>,
-        emphasize: EmphasizeFunction<T>,
+        stringify: impl Fn(&T, &mut fmt::Formatter<'_>) -> fmt::Result,
+        emphasize: impl Fn(&T) -> bool,
     ) -> Result<Self> {
-        let embedding = Embedder::embed(self.tree, stringify, emphasize)?;
+        let embedding = Embedder::embed(self.tree, &stringify, &emphasize)?;
         Ok(Self {
             tree: self.tree,
             file_name: self.file_name,

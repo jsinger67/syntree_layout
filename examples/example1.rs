@@ -1,4 +1,5 @@
-use std::fmt::Display;
+use std::fmt;
+
 use syntree::Builder;
 use syntree_layout::{Layouter, Result, Visualize};
 
@@ -8,9 +9,10 @@ struct MyNodeData(i32);
 // You need to implement syntree_layout::Visualize for your nodes data type if you want your own
 // node representation.
 impl Visualize for MyNodeData {
-    fn visualize(&self) -> std::string::String {
-        format!("Id({})", self.0)
+    fn visualize(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Id({})", self.0)
     }
+
     fn emphasize(&self) -> bool {
         // This simply emphasizes only the leaf nodes.
         // It only works for this example.
@@ -18,8 +20,8 @@ impl Visualize for MyNodeData {
     }
 }
 
-impl Display for MyNodeData {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+impl fmt::Display for MyNodeData {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }
 }
@@ -42,17 +44,17 @@ fn main() -> Result<()> {
 
     let tree = tree.build().unwrap();
     Layouter::new(&tree)
-        .with_file_path(std::path::Path::new("examples/example1_vis.svg"))
+        .with_file_path("examples/example1_vis.svg")
         .embed_with_visualize()?
         .write()?;
 
     Layouter::new(&tree)
-        .with_file_path(std::path::Path::new("examples/example1_deb.svg"))
+        .with_file_path("examples/example1_deb.svg")
         .embed_with_debug()?
         .write()?;
 
     Layouter::new(&tree)
-        .with_file_path(std::path::Path::new("examples/example1_dis.svg"))
+        .with_file_path("examples/example1_dis.svg")
         .embed()?
         .write()
 }
