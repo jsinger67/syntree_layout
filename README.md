@@ -9,6 +9,8 @@
 A library to visualize tree structures, tailored for the
 *[syntree](https://github.com/udoprog/syntree)* crate.
 
+Please, see [CHANGELOG](CHANGELOG.md) for latest changes.
+
 ## Overview
 
 This crate provides an additional way to represent trees visually, in the sense of `syntree`'s own

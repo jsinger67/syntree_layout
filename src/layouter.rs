@@ -101,7 +101,7 @@ where
     }
 
     ///
-    /// Sets a different drawer when you don'a want to use the default svg-drawer.
+    /// Sets a different drawer when you don't want to use the default svg-drawer.
     /// If this method is not called the crate's own svg-drawer is used.
     ///
     /// ```
