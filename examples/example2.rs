@@ -1,9 +1,6 @@
 use std::fmt;
 use syntree_layout::{Layouter, Visualize};
 
-#[derive(Debug)]
-struct MyNodeData(i32);
-
 enum Ast {
     Calc,
     CalcLst1,

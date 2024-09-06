@@ -218,6 +218,31 @@ where
             embedding,
         })
     }
+
+    ///
+    /// This method creates an embedding of the nodes of the given tree in the plane.
+    /// The nodes representation is taken form the [Visualize][crate::Visualize] implementation of
+    /// type T, but in contrast to [embed_with_visualize][Layouter::embed_with_visualize] the
+    /// visualization is done with the help of the given source string.
+    ///
+    /// # Panics
+    ///
+    /// The method should not panic. If you encounter a panic this should be originated from
+    /// bugs in coding. Please report such panics.
+    ///
+    pub fn embed_with_visualize_and_source(self, source: &str) -> Result<Self> {
+        let embedding = Embedder::embed(
+            self.tree,
+            |value: &T, f| value.visualize_with_source(f, source),
+            |value: &T| value.emphasize(),
+        )?;
+        Ok(Self {
+            tree: self.tree,
+            file_name: self.file_name,
+            drawer: self.drawer,
+            embedding,
+        })
+    }
 }
 
 impl<'a, T, I, W, D> Layouter<'a, T, I, W, D>
