@@ -1,6 +1,6 @@
 //! The module that holds types to embed nodes of a tree into the plane.
 
-use std::fmt;
+use std::fmt::{self};
 
 use syntree::{index::Index, node::Event, pointer::Width, Node, Tree};
 
@@ -15,6 +15,7 @@ use super::node::{EmbeddingHelperData, InternalNode};
 ///
 pub(crate) struct Embedder<T, I, W>
 where
+    T: Copy,
     I: Index,
     W: Width,
 {
@@ -25,6 +26,7 @@ where
 
 impl<T, I, W> Embedder<T, I, W>
 where
+    T: Copy,
     I: Index,
     W: Width,
 {
@@ -45,6 +47,63 @@ where
         // After this step each item has following properties set:
         // 'y_order', 'x_extent', 'text', 'is_emphasized', 'ord'
         let mut items = Self::create_initial_embedding_data(tree, &stringify, &emphasize)?;
+        debug_assert_eq!(items.0.len(), items.1.len());
+
+        // Set widths (x_extent_children, x_extent_of_children) on each InternalNode structure
+        // After this step each item has following properties set:
+        // 'y_order', 'x_extent', 'text', 'is_emphasized', 'ord', 'x_extent_children',
+        // 'x_extent_of_children', 'parent'
+        Self::apply_children_x_extents(tree, &mut items);
+
+        // Finally set the property 'x_center' from leafs to root
+        // After this step each item has all necessary properties set
+        Self::apply_x_center(&mut items)?;
+
+        // Transfer result
+        Ok(Self::transfer_result(items))
+    }
+
+    /// Embeds the nodes of the given tree into the plane. The source code is used to display the
+    /// text of the nodes, if they are tokens.
+    pub(crate) fn embed_with_source(tree: &Tree<T, I, W>, source: &str) -> Result<Embedding>
+    where
+        T: Copy,
+        I: Index,
+        W: Width,
+    {
+        // Insert all tree items with their indices
+        // After this step each item has following properties set:
+        // 'y_order', 'x_extent', 'text', 'is_emphasized', 'ord'
+        let mut items = Self::create_initial_embedding_data_with_source(tree, source)?;
+        debug_assert_eq!(items.0.len(), items.1.len());
+
+        // Set widths (x_extent_children, x_extent_of_children) on each InternalNode structure
+        // After this step each item has following properties set:
+        // 'y_order', 'x_extent', 'text', 'is_emphasized', 'ord', 'x_extent_children',
+        // 'x_extent_of_children', 'parent'
+        Self::apply_children_x_extents(tree, &mut items);
+
+        // Finally set the property 'x_center' from leafs to root
+        // After this step each item has all necessary properties set
+        Self::apply_x_center(&mut items)?;
+
+        // Transfer result
+        Ok(Self::transfer_result(items))
+    }
+
+    pub(crate) fn embed_with_source_and_display(
+        tree: &Tree<T, I, W>,
+        source: &str,
+    ) -> Result<Embedding>
+    where
+        T: Copy + fmt::Display,
+        I: Index,
+        W: Width,
+    {
+        // Insert all tree items with their indices
+        // After this step each item has following properties set:
+        // 'y_order', 'x_extent', 'text', 'is_emphasized', 'ord'
+        let mut items = Self::create_initial_embedding_data_with_source_and_display(tree, source)?;
         debug_assert_eq!(items.0.len(), items.1.len());
 
         // Set widths (x_extent_children, x_extent_of_children) on each InternalNode structure
@@ -82,14 +141,14 @@ where
             }
         }
 
-        let text = Wrapper(stringify, node.value()).to_string();
+        let text = Wrapper(stringify, &node.value()).to_string();
 
         let y_order = depth;
         let x_center = 0;
         let x_extent = text.len() + 1;
         let x_extent_of_children = x_extent;
         let x_extent_children = x_extent;
-        let is_emphasized = emphasize(node.value());
+        let is_emphasized = emphasize(&node.value());
         let parent = node
             .parent()
             .and_then(|p| items.get_by_node_id(&p.id()).map(|n| n.ord));
@@ -103,6 +162,79 @@ where
             x_extent_children,
             text,
             is_emphasized,
+            parent,
+            ord,
+            node_id,
+        }
+    }
+
+    fn create_from_node_with_source(
+        ord: usize,
+        depth: usize,
+        node: Node<T, I, W>,
+        items: &EmbeddingHelperData<W>,
+        source: &str,
+    ) -> InternalNode<W> {
+        let text = source[node.range()].to_string();
+
+        let y_order = depth;
+        let x_center = 0;
+        let x_extent = text.len() + 1;
+        let x_extent_of_children = x_extent;
+        let x_extent_children = x_extent;
+        let parent = node
+            .parent()
+            .and_then(|p| items.get_by_node_id(&p.id()).map(|n| n.ord));
+        let node_id = node.id();
+
+        InternalNode {
+            y_order,
+            x_center,
+            x_extent,
+            x_extent_of_children,
+            x_extent_children,
+            text,
+            is_emphasized: false,
+            parent,
+            ord,
+            node_id,
+        }
+    }
+
+    fn create_from_node_with_source_and_diplay(
+        ord: usize,
+        depth: usize,
+        node: Node<T, I, W>,
+        items: &EmbeddingHelperData<W>,
+        source: &str,
+    ) -> InternalNode<W>
+    where
+        T: fmt::Display,
+    {
+        let text = if node.has_children() {
+            node.value().to_string()
+        } else {
+            source[node.range()].to_string()
+        };
+
+        let y_order = depth;
+        let x_center = 0;
+        let x_extent = text.len() + 1;
+        let x_extent_of_children = x_extent;
+        let x_extent_children = x_extent;
+        let parent = node
+            .parent()
+            .and_then(|p| items.get_by_node_id(&p.id()).map(|n| n.ord));
+        let node_id = node.id();
+
+        InternalNode {
+            y_order,
+            x_center,
+            x_extent,
+            x_extent_of_children,
+            x_extent_children,
+            text,
+            is_emphasized: false,
             parent,
             ord,
             node_id,
@@ -126,7 +258,61 @@ where
             .enumerate()
             .for_each(|(ord, (depth, node))| {
                 let new_item =
-                    Self::create_from_node(ord, depth, node, &items, stringify, emphasize);
+                    Self::create_from_node(ord, depth as usize, node, &items, stringify, emphasize);
+                items.insert(ord, new_item);
+            });
+
+        Ok(items)
+    }
+
+    fn create_initial_embedding_data_with_source(
+        tree: &Tree<T, I, W>,
+        source: &str,
+    ) -> Result<EmbeddingHelperData<W>> {
+        let mut items = EmbeddingHelperData::with_capacity(tree.len());
+        if tree.children().count() > 1 {
+            return Err(LayouterError::from_description(
+                "Currently we support only one root",
+            ));
+        }
+
+        tree.walk()
+            .with_depths()
+            .enumerate()
+            .for_each(|(ord, (depth, node))| {
+                let new_item =
+                    Self::create_from_node_with_source(ord, depth as usize, node, &items, source);
+                items.insert(ord, new_item);
+            });
+
+        Ok(items)
+    }
+
+    fn create_initial_embedding_data_with_source_and_display(
+        tree: &Tree<T, I, W>,
+        source: &str,
+    ) -> Result<EmbeddingHelperData<W>>
+    where
+        T: fmt::Display,
+    {
+        let mut items = EmbeddingHelperData::with_capacity(tree.len());
+        if tree.children().count() > 1 {
+            return Err(LayouterError::from_description(
+                "Currently we support only one root",
+            ));
+        }
+
+        tree.walk()
+            .with_depths()
+            .enumerate()
+            .for_each(|(ord, (depth, node))| {
+                let new_item = Self::create_from_node_with_source_and_diplay(
+                    ord,
+                    depth as usize,
+                    node,
+                    &items,
+                    source,
+                );
                 items.insert(ord, new_item);
             });
 

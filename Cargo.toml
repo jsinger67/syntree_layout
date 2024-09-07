@@ -13,6 +13,6 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0"
-syntree = "0.14"
+syntree = "0.17.4"
 thiserror = "1.0"
 xml_writer = "0.4"

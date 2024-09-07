@@ -3,7 +3,7 @@ use std::fmt;
 use syntree::{Builder, Tree};
 use syntree_layout::{Layouter, Visualize};
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 struct MyNodeData(i32);
 
 impl Visualize for MyNodeData {

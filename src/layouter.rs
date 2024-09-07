@@ -14,6 +14,7 @@ use crate::{
 ///
 pub struct Layouter<'a, T, I, W, D>
 where
+    T: Copy,
     I: Index,
     W: Width,
     D: ?Sized + Drawer,
@@ -26,6 +27,7 @@ where
 
 impl<'a, T, I, W> Layouter<'a, T, I, W, SvgDrawer>
 where
+    T: Copy,
     I: Index,
     W: Width,
 {
@@ -37,6 +39,7 @@ where
     /// use syntree_layout::{Layouter, Visualize};
     /// use syntree::{Tree, Builder};
     ///
+    /// #[derive(Copy, Clone, Debug)]
     /// struct MyNodeData(i32);
     ///
     /// impl Visualize for MyNodeData {
@@ -63,6 +66,7 @@ where
 
 impl<'a, T, I, W, D> Layouter<'a, T, I, W, D>
 where
+    T: Copy,
     I: Index,
     W: Width,
     D: ?Sized + Drawer,
@@ -75,6 +79,7 @@ where
     /// use syntree_layout::{Layouter, Visualize};
     /// use syntree::{Tree, Builder};
     ///
+    /// #[derive(Copy, Clone, Debug)]
     /// struct MyNodeData(i32);
     ///
     /// impl Visualize for MyNodeData {
@@ -116,7 +121,7 @@ where
     ///         Ok(())
     ///     }
     /// }
-    ///
+    /// #[derive(Copy, Clone, Debug)]
     /// struct MyNodeData(i32);
     ///
     /// impl Visualize for MyNodeData {
@@ -154,6 +159,7 @@ where
     /// use syntree_layout::{Layouter, Visualize, Result};
     /// use syntree::{Tree, Builder};
     ///
+    /// #[derive(Copy, Clone, Debug)]
     /// struct MyNodeData(i32);
     ///
     /// impl Visualize for MyNodeData {
@@ -190,7 +196,7 @@ where
 
 impl<'a, T, I, W, D> Layouter<'a, T, I, W, D>
 where
-    T: Visualize,
+    T: Copy + Visualize,
     I: Index,
     W: Width,
     D: ?Sized + Drawer,
@@ -218,24 +224,26 @@ where
             embedding,
         })
     }
+}
 
+impl<'a, T, I, W, D> Layouter<'a, T, I, W, D>
+where
+    T: Copy,
+    I: Index,
+    W: Width,
+    D: ?Sized + Drawer,
+{
     ///
     /// This method creates an embedding of the nodes of the given tree in the plane.
-    /// The nodes representation is taken form the [Visualize][crate::Visualize] implementation of
-    /// type T, but in contrast to [embed_with_visualize][Layouter::embed_with_visualize] the
-    /// visualization is done with the help of the given source string.
+    /// The nodes representation is done with the help of the given source string.
     ///
     /// # Panics
     ///
     /// The method should not panic. If you encounter a panic this should be originated from
     /// bugs in coding. Please report such panics.
     ///
-    pub fn embed_with_visualize_and_source(self, source: &str) -> Result<Self> {
-        let embedding = Embedder::embed(
-            self.tree,
-            |value: &T, f| value.visualize_with_source(f, source),
-            |value: &T| value.emphasize(),
-        )?;
+    pub fn embed_with_source(self, source: &str) -> Result<Self> {
+        let embedding = Embedder::embed_with_source(self.tree, source)?;
         Ok(Self {
             tree: self.tree,
             file_name: self.file_name,
@@ -247,7 +255,35 @@ where
 
 impl<'a, T, I, W, D> Layouter<'a, T, I, W, D>
 where
-    T: Debug,
+    T: Copy + Display,
+    I: Index,
+    W: Width,
+    D: ?Sized + Drawer,
+{
+    ///
+    /// This method creates an embedding of the nodes of the given tree in the plane.
+    /// The nodes representation is done with the help of the given source string for tokens and the
+    /// implementation of the `Display` trait of the node data for inner nodes.
+    ///
+    /// # Panics
+    ///
+    /// The method should not panic. If you encounter a panic this should be originated from
+    /// bugs in coding. Please report such panics.
+    ///
+    pub fn embed_with_source_and_display(self, source: &str) -> Result<Self> {
+        let embedding = Embedder::embed_with_source_and_display(self.tree, source)?;
+        Ok(Self {
+            tree: self.tree,
+            file_name: self.file_name,
+            drawer: self.drawer,
+            embedding,
+        })
+    }
+}
+
+impl<'a, T, I, W, D> Layouter<'a, T, I, W, D>
+where
+    T: Copy + Debug,
     I: Index,
     W: Width,
     D: ?Sized + Drawer,
@@ -275,7 +311,7 @@ where
 
 impl<'a, T, I, W, D> Layouter<'a, T, I, W, D>
 where
-    T: Display,
+    T: Copy + Display,
     I: Index,
     W: Width,
     D: ?Sized + Drawer,
@@ -303,6 +339,7 @@ where
 
 impl<'a, T, I, W, D> Layouter<'a, T, I, W, D>
 where
+    T: Copy,
     I: Index,
     W: Width,
     D: Drawer,

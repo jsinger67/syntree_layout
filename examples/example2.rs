@@ -1,6 +1,7 @@
 use std::fmt;
 use syntree_layout::{Layouter, Visualize};
 
+#[derive(Copy, Clone, Debug)]
 enum Ast {
     Calc,
     CalcLst1,

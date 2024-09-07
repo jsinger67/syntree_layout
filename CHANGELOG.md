@@ -6,8 +6,19 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ---
+## 0.3.0 - 2024-09-07
 
-## v0.2.0 - 2023-03-05
+* Update to syntree 0.17.4
+* Provide a new Layouter APIs: `embed_with_source` and  `embed_with_source_and_display`. To be able
+to use this API the node data doesn't need to implement `Virtualize`. See `example3` in the examples
+folder:
+```shell
+cargo run --example example3
+```
+and then have a look at the generated `example3_1.svg` and `example3_2.svg` for the differences of
+both variants.
+
+## 0.2.0 - 2023-03-05
 
 * Add CHANGELOG
 * Update year in MIT license file
