@@ -33,9 +33,9 @@ I provide several ways to represent the nodes' data.
 * Using the `Debug` implementation of node's data type
 * Using the `Visualize` implementation of node's data type
 * Using directly provided methods
-* As of version 0.3.0 this crate also provides a visualization method that uses the source code that
-has been used to generate the syntax tree. To be able to use this API the node data doesn't need to
-implement the `Virtualize` trait. See `example3` in the examples folder.
+* As of version 0.3.0 this crate also provides visualization methods that uses the source code that
+has been used to generate the syntax tree. To be able to use the new APIs the node data doesn't need
+to implement the `Virtualize` trait. See `example3` in the examples folder.
 The new APIs are `Layouter::embed_with_source` and  `Layouter::embed_with_source_and_display`
 
 The `Visualize` trait only contains two methods and only one of them is mandatory to implement.
