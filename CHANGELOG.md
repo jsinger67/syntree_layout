@@ -10,8 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 * Update to syntree 0.17.4
 * Provide a new Layouter APIs: `embed_with_source` and  `embed_with_source_and_display`. To be able
-to use this API the node data doesn't need to implement `Virtualize`. See `example3` in the examples
-folder:
+to use these APIs the node data doesn't need to implement `Virtualize`. See `example3` in the
+examples folder:
 ```shell
 cargo run --example example3
 ```
