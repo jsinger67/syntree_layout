@@ -1,6 +1,6 @@
 //! The module with the data structures used in the **Public API**.
 
-use syntree::pointer::Width;
+use syntree::Flavor;
 
 use crate::internal::node::InternalNode;
 
@@ -39,8 +39,8 @@ pub struct EmbeddedNode {
 ///
 /// Conversion form internal to external (i.e. public) representation of the embedding structure.
 ///
-impl<P: Width> From<InternalNode<P>> for EmbeddedNode {
-    fn from(e: InternalNode<P>) -> Self {
+impl<F: Flavor> From<InternalNode<F>> for EmbeddedNode {
+    fn from(e: InternalNode<F>) -> Self {
         Self {
             y_order: e.y_order,
             x_center: e.x_center,

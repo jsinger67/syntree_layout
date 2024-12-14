@@ -3,7 +3,8 @@
 use std::fmt::{self, Debug, Display};
 use std::path::Path;
 
-use syntree::{index::Index, pointer::Width, Tree};
+use syntree::Flavor;
+use syntree::Tree;
 
 use crate::{
     internal::embedder::Embedder, Drawer, Embedding, LayouterError, Result, SvgDrawer, Visualize,
@@ -12,24 +13,22 @@ use crate::{
 ///
 /// The Layouter type provides a simple builder mechanism with a fluent API.
 ///
-pub struct Layouter<'a, T, I, W, D>
+pub struct Layouter<'a, T, F, D>
 where
     T: Copy,
-    I: Index,
-    W: Width,
+    F: Flavor,
     D: ?Sized + Drawer,
 {
-    tree: &'a Tree<T, I, W>,
+    tree: &'a Tree<T, F>,
     drawer: &'a D,
     file_name: Option<&'a Path>,
     embedding: Embedding,
 }
 
-impl<'a, T, I, W> Layouter<'a, T, I, W, SvgDrawer>
+impl<'a, T, F> Layouter<'a, T, F, SvgDrawer>
 where
     T: Copy,
-    I: Index,
-    W: Width,
+    F: Flavor,
 {
     ///
     /// Creates a new Layouter with the required tree.
@@ -48,11 +47,11 @@ where
     /// }
     ///
     ///
-    /// let tree: Tree<MyNodeData, _, _> = Builder::new().build().unwrap();
+    /// let tree: Tree<MyNodeData, _> = Builder::new().build().unwrap();
     /// let layouter = Layouter::new(&tree);
     /// ```
     ///
-    pub fn new(tree: &'a Tree<T, I, W>) -> Self {
+    pub fn new(tree: &'a Tree<T, F>) -> Self {
         static DEFAULT_DRAWER: SvgDrawer = SvgDrawer::new();
 
         Self {
@@ -64,11 +63,10 @@ where
     }
 }
 
-impl<'a, T, I, W, D> Layouter<'a, T, I, W, D>
+impl<'a, T, F, D> Layouter<'a, T, F, D>
 where
     T: Copy,
-    I: Index,
-    W: Width,
+    F: Flavor,
     D: ?Sized + Drawer,
 {
     ///
@@ -88,7 +86,7 @@ where
     /// }
     ///
     ///
-    /// let tree: Tree<MyNodeData, _, _> = Builder::new().build().unwrap();
+    /// let tree: Tree<MyNodeData, _> = Builder::new().build().unwrap();
     /// let layouter = Layouter::new(&tree)
     ///     .with_file_path("target/tmp/test.svg");
     /// ```
@@ -130,14 +128,14 @@ where
     /// }
     ///
     ///
-    /// let tree: Tree<MyNodeData, _, _> = Builder::new().build().unwrap();
+    /// let tree: Tree<MyNodeData, _> = Builder::new().build().unwrap();
     /// let drawer = NilDrawer;
     /// let layouter = Layouter::new(&tree)
     ///     .with_drawer(&drawer)
     ///     .with_file_path("target/tmp/test.svg");
     /// ```
     ///
-    pub fn with_drawer<U>(self, drawer: &'a U) -> Layouter<T, I, W, U>
+    pub fn with_drawer<U>(self, drawer: &'a U) -> Layouter<'a, T, F, U>
     where
         U: Drawer,
     {
@@ -168,7 +166,7 @@ where
     /// }
     ///
     /// fn test() -> Result<()> {
-    ///     let tree: Tree<MyNodeData, _, _> = Builder::new().build().unwrap();
+    ///     let tree: Tree<MyNodeData, _> = Builder::new().build().unwrap();
     ///     Ok(Layouter::new(&tree)
     ///         .with_file_path("target/tmp/test.svg")
     ///         .embed_with_visualize()?
@@ -194,11 +192,10 @@ where
     }
 }
 
-impl<'a, T, I, W, D> Layouter<'a, T, I, W, D>
+impl<T, F, D> Layouter<'_, T, F, D>
 where
     T: Copy + Visualize,
-    I: Index,
-    W: Width,
+    F: Flavor,
     D: ?Sized + Drawer,
 {
     ///
@@ -226,11 +223,10 @@ where
     }
 }
 
-impl<'a, T, I, W, D> Layouter<'a, T, I, W, D>
+impl<T, F, D> Layouter<'_, T, F, D>
 where
     T: Copy,
-    I: Index,
-    W: Width,
+    F: Flavor,
     D: ?Sized + Drawer,
 {
     ///
@@ -253,11 +249,10 @@ where
     }
 }
 
-impl<'a, T, I, W, D> Layouter<'a, T, I, W, D>
+impl<T, F, D> Layouter<'_, T, F, D>
 where
     T: Copy + Display,
-    I: Index,
-    W: Width,
+    F: Flavor,
     D: ?Sized + Drawer,
 {
     ///
@@ -281,11 +276,10 @@ where
     }
 }
 
-impl<'a, T, I, W, D> Layouter<'a, T, I, W, D>
+impl<T, F, D> Layouter<'_, T, F, D>
 where
     T: Copy + Debug,
-    I: Index,
-    W: Width,
+    F: Flavor,
     D: ?Sized + Drawer,
 {
     ///
@@ -309,11 +303,10 @@ where
     }
 }
 
-impl<'a, T, I, W, D> Layouter<'a, T, I, W, D>
+impl<T, F, D> Layouter<'_, T, F, D>
 where
     T: Copy + Display,
-    I: Index,
-    W: Width,
+    F: Flavor,
     D: ?Sized + Drawer,
 {
     ///
@@ -337,11 +330,10 @@ where
     }
 }
 
-impl<'a, T, I, W, D> Layouter<'a, T, I, W, D>
+impl<T, F, D> Layouter<'_, T, F, D>
 where
     T: Copy,
-    I: Index,
-    W: Width,
+    F: Flavor,
     D: Drawer,
 {
     ///

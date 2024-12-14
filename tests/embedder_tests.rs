@@ -14,7 +14,7 @@ impl Visualize for MyNodeData {
 
 #[test]
 fn empty_tree() {
-    let tree: Tree<MyNodeData, _, _> = Builder::new().build().unwrap();
+    let tree: Tree<MyNodeData, _> = Builder::new().build().unwrap();
     let layouter = Layouter::new(&tree).embed_with_visualize().unwrap();
     let embedding = layouter.embedding();
     assert!(embedding.is_empty());

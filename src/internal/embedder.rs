@@ -2,7 +2,7 @@
 
 use std::fmt::{self};
 
-use syntree::{index::Index, node::Event, pointer::Width, Node, Tree};
+use syntree::{node::Event, Flavor, Node, Tree};
 
 use crate::{Embedding, LayouterError, Result};
 
@@ -13,22 +13,19 @@ use super::node::{EmbeddingHelperData, InternalNode};
 /// the plane.
 /// It is an internal type used by the public API [crate::Layouter].
 ///
-pub(crate) struct Embedder<T, I, W>
+pub(crate) struct Embedder<T, F>
 where
     T: Copy,
-    I: Index,
-    W: Width,
+    F: Flavor,
 {
     _1: std::marker::PhantomData<T>,
-    _2: std::marker::PhantomData<I>,
-    _3: std::marker::PhantomData<W>,
+    _2: std::marker::PhantomData<F>,
 }
 
-impl<T, I, W> Embedder<T, I, W>
+impl<T, F> Embedder<T, F>
 where
     T: Copy,
-    I: Index,
-    W: Width,
+    F: Flavor,
 {
     ///
     /// This method creates an embedding of the nodes of the given tree in the plane.
@@ -39,7 +36,7 @@ where
     /// bugs in coding. Please report such panics.
     ///
     pub(crate) fn embed(
-        tree: &Tree<T, I, W>,
+        tree: &Tree<T, F>,
         stringify: impl Fn(&T, &mut fmt::Formatter<'_>) -> fmt::Result,
         emphasize: impl Fn(&T) -> bool,
     ) -> Result<Embedding> {
@@ -65,11 +62,10 @@ where
 
     /// Embeds the nodes of the given tree into the plane. The source code is used to display the
     /// text of the nodes, if they are tokens.
-    pub(crate) fn embed_with_source(tree: &Tree<T, I, W>, source: &str) -> Result<Embedding>
+    pub(crate) fn embed_with_source(tree: &Tree<T, F>, source: &str) -> Result<Embedding>
     where
         T: Copy,
-        I: Index,
-        W: Width,
+        F: Flavor,
     {
         // Insert all tree items with their indices
         // After this step each item has following properties set:
@@ -92,13 +88,12 @@ where
     }
 
     pub(crate) fn embed_with_source_and_display(
-        tree: &Tree<T, I, W>,
+        tree: &Tree<T, F>,
         source: &str,
     ) -> Result<Embedding>
     where
         T: Copy + fmt::Display,
-        I: Index,
-        W: Width,
+        F: Flavor,
     {
         // Insert all tree items with their indices
         // After this step each item has following properties set:
@@ -123,11 +118,11 @@ where
     fn create_from_node(
         ord: usize,
         depth: usize,
-        node: Node<T, I, W>,
-        items: &EmbeddingHelperData<W>,
+        node: Node<T, F>,
+        items: &EmbeddingHelperData<F>,
         stringify: &impl Fn(&T, &mut fmt::Formatter<'_>) -> fmt::Result,
         emphasize: &impl Fn(&T) -> bool,
-    ) -> InternalNode<W> {
+    ) -> InternalNode<F> {
         // Wrapper to help evaluate forwarded Display implementation.
         struct Wrapper<'a, F, T>(&'a F, &'a T);
 
@@ -171,10 +166,10 @@ where
     fn create_from_node_with_source(
         ord: usize,
         depth: usize,
-        node: Node<T, I, W>,
-        items: &EmbeddingHelperData<W>,
+        node: Node<T, F>,
+        items: &EmbeddingHelperData<F>,
         source: &str,
-    ) -> InternalNode<W> {
+    ) -> InternalNode<F> {
         let text = source[node.range()].to_string();
 
         let y_order = depth;
@@ -204,10 +199,10 @@ where
     fn create_from_node_with_source_and_diplay(
         ord: usize,
         depth: usize,
-        node: Node<T, I, W>,
-        items: &EmbeddingHelperData<W>,
+        node: Node<T, F>,
+        items: &EmbeddingHelperData<F>,
         source: &str,
-    ) -> InternalNode<W>
+    ) -> InternalNode<F>
     where
         T: fmt::Display,
     {
@@ -242,10 +237,10 @@ where
     }
 
     fn create_initial_embedding_data(
-        tree: &Tree<T, I, W>,
+        tree: &Tree<T, F>,
         stringify: &impl Fn(&T, &mut fmt::Formatter<'_>) -> fmt::Result,
         emphasize: &impl Fn(&T) -> bool,
-    ) -> Result<EmbeddingHelperData<W>> {
+    ) -> Result<EmbeddingHelperData<F>> {
         let mut items = EmbeddingHelperData::with_capacity(tree.len());
         if tree.children().count() > 1 {
             return Err(LayouterError::from_description(
@@ -266,9 +261,9 @@ where
     }
 
     fn create_initial_embedding_data_with_source(
-        tree: &Tree<T, I, W>,
+        tree: &Tree<T, F>,
         source: &str,
-    ) -> Result<EmbeddingHelperData<W>> {
+    ) -> Result<EmbeddingHelperData<F>> {
         let mut items = EmbeddingHelperData::with_capacity(tree.len());
         if tree.children().count() > 1 {
             return Err(LayouterError::from_description(
@@ -289,9 +284,9 @@ where
     }
 
     fn create_initial_embedding_data_with_source_and_display(
-        tree: &Tree<T, I, W>,
+        tree: &Tree<T, F>,
         source: &str,
-    ) -> Result<EmbeddingHelperData<W>>
+    ) -> Result<EmbeddingHelperData<F>>
     where
         T: fmt::Display,
     {
@@ -319,7 +314,7 @@ where
         Ok(items)
     }
 
-    fn apply_children_x_extents(tree: &Tree<T, I, W>, items: &mut EmbeddingHelperData<W>) {
+    fn apply_children_x_extents(tree: &Tree<T, F>, items: &mut EmbeddingHelperData<F>) {
         tree.walk_events().for_each(|(event, node)| {
             if let Event::Up = event {
                 let x_extent_of_children = node.children().fold(0, |acc, child| {
@@ -338,7 +333,7 @@ where
         });
     }
 
-    fn x_center_layer(layer: usize, items: &mut EmbeddingHelperData<W>) -> Result<()> {
+    fn x_center_layer(layer: usize, items: &mut EmbeddingHelperData<F>) -> Result<()> {
         let node_ids_in_layer =
             items
                 .0
@@ -407,7 +402,7 @@ where
         Ok(())
     }
 
-    fn apply_x_center(items: &mut EmbeddingHelperData<W>) -> Result<()> {
+    fn apply_x_center(items: &mut EmbeddingHelperData<F>) -> Result<()> {
         let height = items
             .0
             .iter()
@@ -422,7 +417,7 @@ where
 
     /// Transforming the internal `EmbeddingHelperMap` to the external representation `Embedding`.
     /// The `items` parameter is hereby consumed.
-    fn transfer_result(items: EmbeddingHelperData<W>) -> Embedding {
+    fn transfer_result(items: EmbeddingHelperData<F>) -> Embedding {
         let len = items.0.len();
         items
             .0

@@ -1,6 +1,6 @@
 [package]
 name = "syntree_layout"
-version = "0.3.1"
+version = "0.4.0"
 authors = ["Jörg Singer <singer.joerg@gmx.de>"]
 description = "A library to visualize trees from the 'syntree' crate."
 documentation = "https://docs.rs/syntree_layout"
@@ -13,6 +13,6 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0"
-syntree = "0.17.4"
-thiserror = "1.0"
+syntree = "0.18"
+thiserror = "2.0"
 xml_writer = "0.4"
