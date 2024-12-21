@@ -209,7 +209,7 @@ where
         let text = if node.has_children() {
             node.value().to_string()
         } else {
-            source[node.range()].to_string()
+            format!("'{}'", &source.get(node.range()).unwrap_or("range_error"))
         };
 
         let y_order = depth;
