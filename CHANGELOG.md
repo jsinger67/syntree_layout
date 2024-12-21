@@ -6,9 +6,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ---
-## 0.4.0 - 2024-12-14
+## 0.4.0 - 2024-12-21
 
 * Update to syntree 0.18.0
+* Fix range error handling in embedder by formatting source output
+* Adjust y2 attribute calculation in SvgDrawer to improve positioning
 
 ## 0.3.0 - 2024-09-07
 
