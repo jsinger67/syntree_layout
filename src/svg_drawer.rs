@@ -140,7 +140,7 @@ impl Drawer for SvgDrawer {
                         "x2",
                         format!("{}", (SvgDrawer::scale_x(data.x_center))).as_str(),
                     )?;
-                    xml.attr("y2", format!("{}", (y - FONT_Y_SIZE)).as_str())?;
+                    xml.attr("y2", format!("{}", (y - FONT_Y_SIZE - 3.0)).as_str())?;
                     xml.attr("stroke", "black")?;
                     xml.end_elem()?;
                 }
